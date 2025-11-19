@@ -9,11 +9,11 @@ export function AnimatedHero() {
   }, []);
 
   const icons = [
-    { Icon: Microscope, color: 'from-blue-400 to-blue-500', delay: 0, position: 'top-10 left-20' },
-    { Icon: Calculator, color: 'from-purple-400 to-purple-500', delay: 0.2, position: 'top-1/3 right-20' },
+    { Icon: Microscope, color: 'from-blue-400 to-blue-500', delay: 0, position: 'top-10 left-12 md:left-20' },
+    { Icon: Calculator, color: 'from-purple-400 to-purple-500', delay: 0.2, position: 'top-1/3 right-4 md:right-20' },
     { Icon: Palette, color: 'from-pink-400 to-pink-500', delay: 0.4, position: 'bottom-5 left-1/3' },
     { Icon: Code, color: 'from-green-400 to-green-500', delay: 0.6, position: 'bottom-20 right-12' },
-    { Icon: Stethoscope, color: 'from-yellow-400 to-yellow-500', delay: 0.8, position: 'top-1/2 left-20' },
+    { Icon: Stethoscope, color: 'from-yellow-400 to-yellow-500', delay: 0.8, position: 'top-1/2 left-4 md:left-20' },
     { Icon: Globe, color: 'from-red-400 to-red-500', delay: 1, position: 'top-1/3.5 right-1/3' },
   ];
 
