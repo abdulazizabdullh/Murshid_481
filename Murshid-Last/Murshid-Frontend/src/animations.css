@@ -1,0 +1,81 @@
+/* Global button hover animations - matching main page style */
+button, .btn {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+button:hover, .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+button:active, .btn:active {
+  transform: translateY(0);
+}
+
+/* Card hover animations */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Input focus animations */
+input:focus, textarea:focus {
+  transform: scale(1.02);
+  transition: all 0.3s ease;
+}
+
+/* Link hover animations */
+a {
+  transition: all 0.3s ease;
+}
+
+a:hover {
+  transform: translateY(-1px);
+}
+
+/* Moving shadow hover effect */
+.moving-shadow {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.moving-shadow:hover {
+  transform: translateY(-2px);
+}
+
+.moving-shadow:hover::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 80%;
+  height: 20px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.2) 0%, transparent 70%);
+  transform: translateX(-50%);
+  animation: shadowMove 0.3s ease-out;
+}
+
+@keyframes shadowMove {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Pulse glow animation */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 2px rgba(59, 130, 246, 0.2); }
+  50% { box-shadow: 0 0 8px rgba(59, 130, 246, 0.4); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
