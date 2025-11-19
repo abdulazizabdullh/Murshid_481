@@ -37,8 +37,6 @@ const Navbar = ({ currentPage, onNavigate }: NavbarProps = {}) => {
     if (location.pathname === '/majors' || location.pathname.startsWith('/majors/')) return 'majors';
     if (location.pathname === '/universities' || location.pathname.startsWith('/universities/')) return 'universities';
     if (location.pathname === '/community' || location.pathname.startsWith('/community/')) return 'community';
-    if (location.pathname === '/contact') return 'contact';
-    if (location.pathname === '/assessment') return 'quiz';
     if (location.pathname === '/profile') return 'profile';
     return 'home';
   };
@@ -76,23 +74,11 @@ const Navbar = ({ currentPage, onNavigate }: NavbarProps = {}) => {
             navigate('/login');
           }
           break;
-        case 'contact':
-          navigate('/contact');
-          break;
         case 'admin-majors':
           navigate('/admin/majors');
           break;
         case 'admin-universities':
           navigate('/admin/universities');
-          break;
-        case 'quiz':
-          if (user) {
-            navigate('/assessment');
-          } else {
-            navigate('/login');
-          }
-          break;
-        case 'contact':
           break;
         default:
           navigate('/');
@@ -114,8 +100,6 @@ const Navbar = ({ currentPage, onNavigate }: NavbarProps = {}) => {
         { id: 'majors', label: t('navbar.majors') },
         { id: 'universities', label: t('navbar.universities') },
         { id: 'community', label: language === 'ar' ? 'المجتمع' : 'Community' },
-        { id: 'quiz', label: t('navbar.quiz') },
-        { id: 'contact', label: t('navbar.contact') },
       ];
 
   return (

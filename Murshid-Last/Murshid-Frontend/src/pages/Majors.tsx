@@ -88,10 +88,6 @@ export default function MajorsPage() {
     await toggleBookmark('major', majorId);
   };
 
-  const handleStartTest = () => {
-    navigate('/assessment');
-  };
-
   const getCategoryColor = (category: MajorCategory): string => {
     const colors: Record<MajorCategory, string> = {
       'Engineering': 'from-blue-400 to-blue-500',
@@ -297,27 +293,6 @@ export default function MajorsPage() {
             </div>
           )}
 
-          {/* CTA Section */}
-          <ScrollAnimation delay={0.4}>
-            <div className="mt-20 bg-[#cdd6ff] dark:bg-[#2a3b6b] rounded-3xl p-12 text-center shadow-xl">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4" dir={language}>
-              {language === 'ar' ? 'لا تزال محتاراً؟' : 'Still Confused?'}
-            </h2>
-            <p className="text-gray-700 dark:text-gray-200 mb-6 max-w-2xl mx-auto" dir={language}>
-              {language === 'ar' 
-                ? 'خذ اختبارنا الشامل لاكتشاف التخصص المثالي بناءً على اهتماماتك ومهاراتك'
-                : 'Take our comprehensive test to discover your ideal major based on your interests and skills'}
-            </p>
-            <Button 
-              onClick={handleStartTest}
-              id="majors-start-test-button"
-              variant="outline"
-              className="rounded-2xl px-8 py-6 border-2 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 border-gray-200 dark:border-gray-700"
-            >
-              {language === 'ar' ? 'ابدأ الاختبار الآن' : 'Start Test Now'}
-            </Button>
-          </div>
-          </ScrollAnimation>
         </div>
       </div>
     </div>

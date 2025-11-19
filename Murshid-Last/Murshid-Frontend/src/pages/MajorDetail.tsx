@@ -369,14 +369,6 @@ export default function MajorDetail() {
                   </p>
                 </div>
               </div>
-
-              <Button 
-                onClick={() => navigate('/assessment')}
-                id="major-detail-assessment-button"
-                className="w-full mt-6"
-              >
-                {language === 'ar' ? 'هل هذا التخصص مناسب لي؟' : 'Is This Right for Me?'}
-              </Button>
             </Card>
           </div>
         </div>

@@ -38,10 +38,12 @@ import {
 } from '@/lib/majorsApi';
 import type { Major, MajorCategory, DegreeType } from '@/types/database';
 import { toast } from 'sonner';
+import { useI18n } from '@/contexts/I18nContext';
 
 export default function AdminMajors() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { t, language } = useI18n();
   const [majors, setMajors] = useState<Major[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,7 +84,7 @@ export default function AdminMajors() {
       setMajors(data);
     } catch (error) {
       console.error('Error fetching majors:', error);
-      toast.error('Failed to load majors');
+      toast.error(t('admin.majors.toast.loadError'));
     } finally {
       setLoading(false);
     }
@@ -100,10 +102,10 @@ export default function AdminMajors() {
 
       if (editingMajor) {
         await updateMajor(editingMajor.id, majorData);
-        toast.success('Major updated successfully');
+        toast.success(t('admin.majors.toast.updateSuccess'));
       } else {
         await createMajor(majorData as any);
-        toast.success('Major created successfully');
+        toast.success(t('admin.majors.toast.createSuccess'));
       }
 
       setDialogOpen(false);
@@ -111,7 +113,7 @@ export default function AdminMajors() {
       fetchMajors();
     } catch (error) {
       console.error('Error saving major:', error);
-      toast.error('Failed to save major');
+      toast.error(t('admin.majors.toast.saveError'));
     }
   };
 
@@ -135,15 +137,15 @@ export default function AdminMajors() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this major?')) return;
+    if (!confirm(t('admin.majors.toast.deleteConfirm'))) return;
 
     try {
       await deleteMajor(id);
-      toast.success('Major deleted successfully');
+      toast.success(t('admin.majors.toast.deleteSuccess'));
       fetchMajors();
     } catch (error) {
       console.error('Error deleting major:', error);
-      toast.error('Failed to delete major');
+      toast.error(t('admin.majors.toast.deleteError'));
     }
   };
 
@@ -185,11 +187,11 @@ export default function AdminMajors() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Manage Majors
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100" dir={language}>
+              {t('admin.majors.title')}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Add, edit, and manage academic majors in the system
+            <p className="text-gray-600 dark:text-gray-400 mt-2" dir={language}>
+              {t('admin.majors.subtitle')}
             </p>
           </div>
           <Button
@@ -200,22 +202,23 @@ export default function AdminMajors() {
             id="admin-majors-add-button"
             className="bg-blue-500 hover:bg-blue-600 text-white rounded-2xl px-8 py-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Major
+            <Plus className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+            {t('admin.majors.add')}
           </Button>
         </div>
 
         {/* Search */}
         <div className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5`} />
             <Input
               id="admin-majors-search-input"
               type="text"
-              placeholder="Search majors..."
+              placeholder={t('admin.majors.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className={language === 'ar' ? 'pr-10' : 'pl-10'}
+              dir={language}
             />
           </div>
         </div>
@@ -252,8 +255,8 @@ export default function AdminMajors() {
                   </p>
                 )}
                 {major.duration_years && (
-                  <p className="text-gray-600 dark:text-gray-400">
-                    ⏱️ {major.duration_years} years
+                  <p className="text-gray-600 dark:text-gray-400" dir={language}>
+                    ⏱️ {major.duration_years} {language === 'ar' ? 'سنوات' : 'years'}
                   </p>
                 )}
               </div>
@@ -266,8 +269,8 @@ export default function AdminMajors() {
                   size="sm"
                   className="flex-1 rounded-xl border-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                 >
-                  <Edit className="w-4 h-4 mr-1" />
-                  Edit
+                  <Edit className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
+                  {t('admin.majors.edit')}
                 </Button>
                 <Button
                   onClick={() => handleDelete(major.id)}
@@ -276,8 +279,8 @@ export default function AdminMajors() {
                   size="sm"
                   className="flex-1 rounded-xl transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                 >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Delete
+                  <Trash2 className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
+                  {t('admin.majors.delete')}
                 </Button>
               </div>
             </Card>
@@ -287,7 +290,7 @@ export default function AdminMajors() {
         {filteredMajors.length === 0 && (
           <div className="text-center py-20">
             <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">No majors found</p>
+            <p className="text-gray-600 dark:text-gray-400" dir={language}>{t('admin.majors.noResults')}</p>
           </div>
         )}
       </div>
@@ -296,43 +299,44 @@ export default function AdminMajors() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingMajor ? 'Edit Major' : 'Add New Major'}
+            <DialogTitle dir={language}>
+              {editingMajor ? t('admin.majors.dialog.editTitle') : t('admin.majors.dialog.addTitle')}
             </DialogTitle>
-            <DialogDescription>
-              Fill in the information below to {editingMajor ? 'update' : 'create'} a major
+            <DialogDescription dir={language}>
+              {t('admin.majors.dialog.description', { action: editingMajor ? t('admin.majors.dialog.update') : t('admin.majors.dialog.create') })}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Icon/Image Upload */}
             <div>
-              <Label>Major Icon/Image (Optional)</Label>
+              <Label dir={language}>{t('admin.majors.form.iconLabel')}</Label>
               <ImageUpload
                 currentImage={formData.icon_name?.startsWith('http') ? formData.icon_name : ''}
                 onImageUpload={(url) => setFormData({ ...formData, icon_name: url })}
                 bucket="major-icons"
                 path={editingMajor?.id || `temp-${Date.now()}`}
-                label="Upload Icon/Image"
+                label={t('admin.majors.form.uploadLabel')}
                 maxSizeMB={1}
               />
-              <p className="text-xs text-gray-500 mt-2">
-                Alternatively, you can use an emoji in the "Icon/Emoji" field below
+              <p className="text-xs text-gray-500 mt-2" dir={language}>
+                {t('admin.majors.form.iconHint')}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="name">Name (English)*</Label>
+                <Label htmlFor="name" dir={language}>{t('admin.majors.form.nameEn')}</Label>
                 <Input
                   id="admin-majors-form-name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
+                  dir={language}
                 />
               </div>
               <div>
-                <Label htmlFor="admin-majors-form-name-ar">Name (Arabic)</Label>
+                <Label htmlFor="admin-majors-form-name-ar" dir={language}>{t('admin.majors.form.nameAr')}</Label>
                 <Input
                   id="admin-majors-form-name-ar"
                   value={formData.name_ar}
@@ -343,17 +347,18 @@ export default function AdminMajors() {
             </div>
 
             <div>
-              <Label htmlFor="admin-majors-form-description">Description (English)</Label>
+              <Label htmlFor="admin-majors-form-description" dir={language}>{t('admin.majors.form.descriptionEn')}</Label>
               <Textarea
                 id="admin-majors-form-description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
+                dir={language}
               />
             </div>
 
             <div>
-              <Label htmlFor="admin-majors-form-description-ar">Description (Arabic)</Label>
+              <Label htmlFor="admin-majors-form-description-ar" dir={language}>{t('admin.majors.form.descriptionAr')}</Label>
               <Textarea
                 id="admin-majors-form-description-ar"
                 value={formData.description_ar}
@@ -365,12 +370,12 @@ export default function AdminMajors() {
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="admin-majors-form-category">Category*</Label>
+                <Label htmlFor="admin-majors-form-category" dir={language}>{t('admin.majors.form.category')}</Label>
                 <Select 
                   value={formData.category} 
                   onValueChange={(value: MajorCategory) => setFormData({ ...formData, category: value })}
                 >
-                  <SelectTrigger id="admin-majors-form-category">
+                  <SelectTrigger id="admin-majors-form-category" dir={language}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -381,12 +386,12 @@ export default function AdminMajors() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="admin-majors-form-degree-type">Degree Type</Label>
+                <Label htmlFor="admin-majors-form-degree-type" dir={language}>{t('admin.majors.form.degreeType')}</Label>
                 <Select 
                   value={formData.degree_type} 
                   onValueChange={(value: DegreeType) => setFormData({ ...formData, degree_type: value })}
                 >
-                  <SelectTrigger id="admin-majors-form-degree-type">
+                  <SelectTrigger id="admin-majors-form-degree-type" dir={language}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -397,50 +402,54 @@ export default function AdminMajors() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="admin-majors-form-duration">Duration (years)</Label>
+                <Label htmlFor="admin-majors-form-duration" dir={language}>{t('admin.majors.form.duration')}</Label>
                 <Input
                   id="admin-majors-form-duration"
                   type="number"
                   step="0.5"
                   value={formData.duration_years}
                   onChange={(e) => setFormData({ ...formData, duration_years: parseFloat(e.target.value) })}
+                  dir={language}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="admin-majors-form-icon">Icon/Emoji</Label>
+                <Label htmlFor="admin-majors-form-icon" dir={language}>{t('admin.majors.form.icon')}</Label>
                 <Input
                   id="admin-majors-form-icon"
                   value={formData.icon_name}
                   onChange={(e) => setFormData({ ...formData, icon_name: e.target.value })}
                   placeholder="📚"
+                  dir={language}
                 />
               </div>
               <div>
-                <Label htmlFor="admin-majors-form-salary">Average Salary Range</Label>
+                <Label htmlFor="admin-majors-form-salary" dir={language}>{t('admin.majors.form.salary')}</Label>
                 <Input
                   id="admin-majors-form-salary"
                   value={formData.average_salary_range}
                   onChange={(e) => setFormData({ ...formData, average_salary_range: e.target.value })}
                   placeholder="e.g., 8,000 - 15,000 SAR"
+                  dir={language}
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="admin-majors-form-career-prospects">Career Prospects (English)</Label>
+              <Label htmlFor="admin-majors-form-career-prospects" dir={language}>{t('admin.majors.form.careerEn')}</Label>
               <Textarea
                 id="admin-majors-form-career-prospects"
                 value={formData.career_prospects}
                 onChange={(e) => setFormData({ ...formData, career_prospects: e.target.value })}
                 rows={2}
+                dir={language}
               />
             </div>
 
             <div>
-              <Label htmlFor="admin-majors-form-career-prospects-ar">Career Prospects (Arabic)</Label>
+              <Label htmlFor="admin-majors-form-career-prospects-ar" dir={language}>{t('admin.majors.form.careerAr')}</Label>
               <Textarea
                 id="admin-majors-form-career-prospects-ar"
                 value={formData.career_prospects_ar}
@@ -460,11 +469,12 @@ export default function AdminMajors() {
                   setDialogOpen(false);
                   resetForm();
                 }}
+                dir={language}
               >
-                Cancel
+                {t('admin.majors.form.cancel')}
               </Button>
-              <Button type="submit" id="admin-majors-form-submit-button" className="bg-blue-500 hover:bg-blue-600 text-white rounded-2xl px-6 py-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                {editingMajor ? 'Update' : 'Create'} Major
+              <Button type="submit" id="admin-majors-form-submit-button" className="bg-blue-500 hover:bg-blue-600 text-white rounded-2xl px-6 py-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1" dir={language}>
+                {editingMajor ? t('admin.majors.form.update') : t('admin.majors.form.create')} {language === 'ar' ? 'التخصص' : 'Major'}
               </Button>
             </DialogFooter>
           </form>

@@ -39,10 +39,12 @@ import {
 } from '@/lib/universitiesApi';
 import type { University, UniversityType } from '@/types/database';
 import { toast } from 'sonner';
+import { useI18n } from '@/contexts/I18nContext';
 
 export default function AdminUniversities() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { t, language } = useI18n();
   const [universities, setUniversities] = useState<University[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,7 +89,7 @@ export default function AdminUniversities() {
       setUniversities(data);
     } catch (error) {
       console.error('Error fetching universities:', error);
-      toast.error('Failed to load universities');
+      toast.error(t('admin.universities.toast.loadError'));
     } finally {
       setLoading(false);
     }
@@ -105,10 +107,10 @@ export default function AdminUniversities() {
 
       if (editingUniversity) {
         await updateUniversity(editingUniversity.id, universityData);
-        toast.success('University updated successfully');
+        toast.success(t('admin.universities.toast.updateSuccess'));
       } else {
         await createUniversity(universityData as any);
-        toast.success('University created successfully');
+        toast.success(t('admin.universities.toast.createSuccess'));
       }
 
       setDialogOpen(false);
@@ -116,7 +118,7 @@ export default function AdminUniversities() {
       fetchUniversities();
     } catch (error) {
       console.error('Error saving university:', error);
-      toast.error('Failed to save university');
+      toast.error(t('admin.universities.toast.saveError'));
     }
   };
 
@@ -144,15 +146,15 @@ export default function AdminUniversities() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this university?')) return;
+    if (!confirm(t('admin.universities.toast.deleteConfirm'))) return;
 
     try {
       await deleteUniversity(id);
-      toast.success('University deleted successfully');
+      toast.success(t('admin.universities.toast.deleteSuccess'));
       fetchUniversities();
     } catch (error) {
       console.error('Error deleting university:', error);
-      toast.error('Failed to delete university');
+      toast.error(t('admin.universities.toast.deleteError'));
     }
   };
 
@@ -192,11 +194,11 @@ export default function AdminUniversities() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Manage Universities
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100" dir={language}>
+              {t('admin.universities.title')}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Add, edit, and manage universities in the system
+            <p className="text-gray-600 dark:text-gray-400 mt-2" dir={language}>
+              {t('admin.universities.subtitle')}
             </p>
           </div>
           <Button
@@ -207,22 +209,23 @@ export default function AdminUniversities() {
             id="admin-universities-add-button"
             className="bg-blue-500 hover:bg-blue-600 text-white rounded-2xl px-8 py-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add University
+            <Plus className={`w-4 h-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+            {t('admin.universities.add')}
           </Button>
         </div>
 
         {/* Search */}
         <div className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5`} />
             <Input
               id="admin-universities-search-input"
               type="text"
-              placeholder="Search universities..."
+              placeholder={t('admin.universities.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className={language === 'ar' ? 'pr-10' : 'pl-10'}
+              dir={language}
             />
           </div>
         </div>
@@ -275,8 +278,8 @@ export default function AdminUniversities() {
                   size="sm"
                   className="flex-1 rounded-xl border-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                 >
-                  <Edit className="w-4 h-4 mr-1" />
-                  Edit
+                  <Edit className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
+                  {t('admin.universities.edit')}
                 </Button>
                 <Button
                   onClick={() => handleDelete(university.id)}
@@ -285,8 +288,8 @@ export default function AdminUniversities() {
                   size="sm"
                   className="flex-1 rounded-xl transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                 >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Delete
+                  <Trash2 className={`w-4 h-4 ${language === 'ar' ? 'ml-1' : 'mr-1'}`} />
+                  {t('admin.universities.delete')}
                 </Button>
               </div>
             </Card>
@@ -296,7 +299,7 @@ export default function AdminUniversities() {
         {filteredUniversities.length === 0 && (
           <div className="text-center py-20">
             <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">No universities found</p>
+            <p className="text-gray-600 dark:text-gray-400" dir={language}>{t('admin.universities.noResults')}</p>
           </div>
         )}
       </div>
@@ -305,40 +308,41 @@ export default function AdminUniversities() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingUniversity ? 'Edit University' : 'Add New University'}
+            <DialogTitle dir={language}>
+              {editingUniversity ? t('admin.universities.dialog.editTitle') : t('admin.universities.dialog.addTitle')}
             </DialogTitle>
-            <DialogDescription>
-              Fill in the information below to {editingUniversity ? 'update' : 'create'} a university
+            <DialogDescription dir={language}>
+              {t('admin.universities.dialog.description', { action: editingUniversity ? t('admin.universities.dialog.update') : t('admin.universities.dialog.create') })}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Logo Upload */}
             <div>
-              <Label>University Logo</Label>
+              <Label dir={language}>{t('admin.universities.form.logoLabel')}</Label>
               <ImageUpload
                 currentImage={formData.logo_url}
                 onImageUpload={(url) => setFormData({ ...formData, logo_url: url })}
                 bucket="university-logos"
                 path={editingUniversity?.id || `temp-${Date.now()}`}
-                label="Upload Logo"
+                label={t('admin.universities.form.uploadLabel')}
                 maxSizeMB={2}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="name">Name (English)*</Label>
+                <Label htmlFor="name" dir={language}>{t('admin.universities.form.nameEn')}</Label>
                 <Input
                   id="admin-universities-form-name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
+                  dir={language}
                 />
               </div>
               <div>
-                <Label htmlFor="admin-universities-form-name-ar">Name (Arabic)</Label>
+                <Label htmlFor="admin-universities-form-name-ar" dir={language}>{t('admin.universities.form.nameAr')}</Label>
                 <Input
                   id="admin-universities-form-name-ar"
                   value={formData.name_ar}
@@ -349,17 +353,18 @@ export default function AdminUniversities() {
             </div>
 
             <div>
-              <Label htmlFor="admin-universities-form-description">Description (English)</Label>
+              <Label htmlFor="admin-universities-form-description" dir={language}>{t('admin.universities.form.descriptionEn')}</Label>
               <Textarea
                 id="admin-universities-form-description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
+                dir={language}
               />
             </div>
 
             <div>
-              <Label htmlFor="admin-universities-form-description-ar">Description (Arabic)</Label>
+              <Label htmlFor="admin-universities-form-description-ar" dir={language}>{t('admin.universities.form.descriptionAr')}</Label>
               <Textarea
                 id="admin-universities-form-description-ar"
                 value={formData.description_ar}
@@ -371,21 +376,22 @@ export default function AdminUniversities() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="admin-universities-form-city">City*</Label>
+                <Label htmlFor="admin-universities-form-city" dir={language}>{t('admin.universities.form.city')}</Label>
                 <Input
                   id="admin-universities-form-city"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   required
+                  dir={language}
                 />
               </div>
               <div>
-                <Label htmlFor="admin-universities-form-type">Type*</Label>
+                <Label htmlFor="admin-universities-form-type" dir={language}>{t('admin.universities.form.type')}</Label>
                 <Select 
                   value={formData.university_type} 
                   onValueChange={(value: UniversityType) => setFormData({ ...formData, university_type: value })}
                 >
-                  <SelectTrigger id="admin-universities-form-type">
+                  <SelectTrigger id="admin-universities-form-type" dir={language}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -399,51 +405,56 @@ export default function AdminUniversities() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="admin-universities-form-establishment-year">Establishment Year</Label>
+                <Label htmlFor="admin-universities-form-establishment-year" dir={language}>{t('admin.universities.form.establishmentYear')}</Label>
                 <Input
                   id="admin-universities-form-establishment-year"
                   type="number"
                   value={formData.establishment_year}
                   onChange={(e) => setFormData({ ...formData, establishment_year: parseInt(e.target.value) })}
+                  dir={language}
                 />
               </div>
               <div>
-                <Label htmlFor="admin-universities-form-student-count">Student Count</Label>
+                <Label htmlFor="admin-universities-form-student-count" dir={language}>{t('admin.universities.form.studentCount')}</Label>
                 <Input
                   id="admin-universities-form-student-count"
                   type="number"
                   value={formData.student_count}
                   onChange={(e) => setFormData({ ...formData, student_count: parseInt(e.target.value) })}
+                  dir={language}
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="admin-universities-form-website">Website URL</Label>
+              <Label htmlFor="admin-universities-form-website" dir={language}>{t('admin.universities.form.website')}</Label>
               <Input
                 id="admin-universities-form-website"
                 type="url"
                 value={formData.website_url}
                 onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+                dir={language}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="admin-universities-form-contact-email">Contact Email</Label>
+                <Label htmlFor="admin-universities-form-contact-email" dir={language}>{t('admin.universities.form.contactEmail')}</Label>
                 <Input
                   id="admin-universities-form-contact-email"
                   type="email"
                   value={formData.contact_email}
                   onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+                  dir={language}
                 />
               </div>
               <div>
-                <Label htmlFor="admin-universities-form-contact-phone">Contact Phone</Label>
+                <Label htmlFor="admin-universities-form-contact-phone" dir={language}>{t('admin.universities.form.contactPhone')}</Label>
                 <Input
                   id="admin-universities-form-contact-phone"
                   value={formData.contact_phone}
                   onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
+                  dir={language}
                 />
               </div>
             </div>
@@ -458,11 +469,12 @@ export default function AdminUniversities() {
                   setDialogOpen(false);
                   resetForm();
                 }}
+                dir={language}
               >
-                Cancel
+                {t('admin.universities.form.cancel')}
               </Button>
-              <Button type="submit" id="admin-universities-form-submit-button" className="bg-blue-500 hover:bg-blue-600 text-white rounded-2xl px-6 py-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                {editingUniversity ? 'Update' : 'Create'} University
+              <Button type="submit" id="admin-universities-form-submit-button" className="bg-blue-500 hover:bg-blue-600 text-white rounded-2xl px-6 py-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1" dir={language}>
+                {editingUniversity ? t('admin.universities.form.update') : t('admin.universities.form.create')} {language === 'ar' ? 'الجامعة' : 'University'}
               </Button>
             </DialogFooter>
           </form>

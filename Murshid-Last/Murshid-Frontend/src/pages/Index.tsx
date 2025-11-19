@@ -119,21 +119,13 @@ const Index = () => {
   ];
 
   const onNavigate = (page: string) => {
-    if (page === "quiz" || page === "assessment") {
-      if (user) {
-        navigate("/assessment");
-      } else {
-        navigate("/login");
-      }
-    } else if (page === "majors") {
-      if (user) {
-        navigate("/majors");
-      } else {
-        navigate("/login");
-      }
+    if (page === "majors") {
+      navigate("/majors");
     } else if (page === "universities") {
+      navigate("/universities");
+    } else if (page === "community") {
       if (user) {
-        navigate("/universities");
+        navigate("/community");
       } else {
         navigate("/login");
       }
@@ -189,13 +181,6 @@ const Index = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Button
-                  onClick={() => onNavigate("quiz")}
-                  id="home-start-now-button"
-                  className="bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-2xl px-8 py-6 shadow-lg transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl"
-                >
-                  {t("homepage.startNow")}
-                </Button>
-                <Button
                   onClick={() => onNavigate("majors")}
                   id="home-browse-majors-button"
                   variant="outline"
@@ -210,6 +195,14 @@ const Index = () => {
                   className="rounded-2xl px-8 py-6 border-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl"
                 >
                   {t("homepage.browseUniversities")}
+                </Button>
+                <Button
+                  onClick={() => onNavigate("community")}
+                  id="home-browse-community-button"
+                  variant="outline"
+                  className="rounded-2xl px-8 py-6 border-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  {language === 'ar' ? 'تصفح المجتمع' : 'Browse Community'}
                 </Button>
               </div>
             </div>
@@ -335,11 +328,11 @@ const Index = () => {
               {t("homepage.readyToDiscoverDesc")}
             </p>
             <Button
-              onClick={() => onNavigate("quiz")}
-              id="home-start-free-test-button"
+              onClick={() => onNavigate("majors")}
+              id="home-browse-majors-cta-button"
               className="bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 rounded-2xl px-8 py-6 shadow-lg transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
-              {t("homepage.startFreeTest")}
+              {t("homepage.browseMajors")}
             </Button>
           </ScrollAnimation>
         </div>

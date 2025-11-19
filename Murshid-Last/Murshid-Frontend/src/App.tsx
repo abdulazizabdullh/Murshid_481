@@ -10,6 +10,7 @@ import { I18nProvider } from "@/contexts/I18nContext";
 import { Analytics } from "@vercel/analytics/react";
 import { useEffect } from "react";
 import { initializeCache } from "@/lib/tagTranslation";
+import ScrollToTop from "./components/ScrollToTop";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -18,7 +19,6 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Profile from "./pages/Profile";
-import Assessment from "./pages/Assessment";
 import Majors from "./pages/Majors";
 import Universities from "./pages/Universities";
 import MajorDetail from "./pages/MajorDetail";
@@ -37,7 +37,6 @@ import MyPosts from "./pages/MyPosts";
 import MyAnswers from "./pages/MyAnswers";
 import MyLikes from "./pages/MyLikes";
 import UserProfile from "./pages/UserProfile";
-import Contact from "./pages/Contact";
 import AuthCallback from "./pages/AuthCallback";
 import ProfileSetup from "./pages/ProfileSetup";
 
@@ -98,7 +97,6 @@ const AppContent = () => {
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/user/:userId" element={<UserProfile />} />
       <Route path="/bookmarks" element={<ProtectedRoute><Bookmarks /></ProtectedRoute>} />
-      <Route path="/assessment" element={<Assessment />} />
       <Route path="/majors" element={<Majors />} />
       <Route path="/majors/:id" element={<MajorDetail />} />
       <Route path="/universities" element={<Universities />} />
@@ -109,7 +107,6 @@ const AppContent = () => {
       <Route path="/community/my-posts" element={<ProtectedRoute><MyPosts /></ProtectedRoute>} />
       <Route path="/community/my-answers" element={<ProtectedRoute><MyAnswers /></ProtectedRoute>} />
       <Route path="/community/my-likes" element={<ProtectedRoute><MyLikes /></ProtectedRoute>} />
-      <Route path="/contact" element={<Contact />} />
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/universities" element={<ProtectedRoute><AdminUniversities /></ProtectedRoute>} />
       <Route path="/admin/majors" element={<ProtectedRoute><AdminMajors /></ProtectedRoute>} />
@@ -142,6 +139,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
+          <ScrollToTop />
           <AuthProvider>
             <AppContent />
           </AuthProvider>
