@@ -328,7 +328,7 @@ const AdminCommunity = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{posts.length}</div>
+                  <div className="text-3xl font-bold">{posts.filter((p) => !p.is_deleted).length}</div>
                 </CardContent>
               </Card>
 
@@ -339,7 +339,7 @@ const AdminCommunity = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{answers.length}</div>
+                  <div className="text-3xl font-bold">{answers.filter((a) => !a.is_deleted).length}</div>
                 </CardContent>
               </Card>
 
@@ -350,7 +350,7 @@ const AdminCommunity = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{comments.length}</div>
+                  <div className="text-3xl font-bold">{comments.filter((c) => !c.is_deleted).length}</div>
                 </CardContent>
               </Card>
 
@@ -378,13 +378,13 @@ const AdminCommunity = () => {
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "posts" | "answers" | "comments" | "reports")}>
                 <TabsList className="mb-6 grid grid-cols-2 xl:inline-flex w-full xl:w-auto h-auto">
                   <TabsTrigger value="posts" className="whitespace-nowrap">
-                    {language === "ar" ? `المنشورات (${posts.length})` : `Posts (${posts.length})`}
+                    {language === "ar" ? `المنشورات (${posts.filter(p => !p.is_deleted).length})` : `Posts (${posts.filter(p => !p.is_deleted).length})`}
                   </TabsTrigger>
                   <TabsTrigger value="answers" className="whitespace-nowrap">
-                    {language === "ar" ? `الإجابات (${answers.length})` : `Answers (${answers.length})`}
+                    {language === "ar" ? `الإجابات (${answers.filter(a => !a.is_deleted).length})` : `Answers (${answers.filter(a => !a.is_deleted).length})`}
                   </TabsTrigger>
                   <TabsTrigger value="comments" className="whitespace-nowrap">
-                    {language === "ar" ? `التعليقات (${comments.length})` : `Comments (${comments.length})`}
+                    {language === "ar" ? `التعليقات (${comments.filter(c => !c.is_deleted).length})` : `Comments (${comments.filter(c => !c.is_deleted).length})`}
                   </TabsTrigger>
                   <TabsTrigger value="reports" className="relative whitespace-nowrap">
                     <Flag className="w-4 h-4 mr-2" />
@@ -399,7 +399,7 @@ const AdminCommunity = () => {
 
                 {/* Posts Tab */}
                 <TabsContent value="posts">
-                  {posts.length === 0 ? (
+                  {posts.filter(p => !p.is_deleted).length === 0 ? (
                     <Card className="p-12 text-center">
                       <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
@@ -479,7 +479,7 @@ const AdminCommunity = () => {
 
                 {/* Answers Tab */}
                 <TabsContent value="answers">
-                  {answers.length === 0 ? (
+                  {answers.filter(a => !a.is_deleted).length === 0 ? (
                     <Card className="p-12 text-center">
                       <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
@@ -551,7 +551,7 @@ const AdminCommunity = () => {
 
                 {/* Comments Tab */}
                 <TabsContent value="comments">
-                  {comments.length === 0 ? (
+                  {comments.filter(c => !c.is_deleted).length === 0 ? (
                     <Card className="p-12 text-center">
                       <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
