@@ -142,7 +142,7 @@ export function MajorsCategoryChart({ title, categoryCounts }: MajorsCategoryCha
             <div className="text-center">
               <div className="text-3xl font-bold">{animatedValue.toLocaleString()}</div>
               <div className="text-xs text-muted-foreground mt-1">
-                {t("admin.dashboard.chart.totalMajors")}
+                {t("admin.dashboard.chart.majors")}
               </div>
             </div>
           </div>
