@@ -1,9 +1,17 @@
-import { PieChart, Pie, Cell } from "recharts";
+import { useMemo, useEffect, useState } from "react";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Doughnut } from "react-chartjs-2";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useI18n } from "@/contexts/I18nContext";
-import { useEffect, useState } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
 import type { MajorCategory } from "@/types/database";
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface CategoryCount {
   category: MajorCategory;
@@ -43,6 +51,7 @@ const CATEGORY_KEYS: Record<MajorCategory, string> = {
 
 export function MajorsCategoryChart({ title, categoryCounts }: MajorsCategoryChartProps) {
   const { t, language } = useI18n();
+  const { actualTheme } = useTheme();
   const [animatedValue, setAnimatedValue] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const isRTL = language === "ar";
@@ -72,27 +81,68 @@ export function MajorsCategoryChart({ title, categoryCounts }: MajorsCategoryCha
   }, [totalMajors]);
 
   // Prepare chart data
-  const chartData = categoryCounts
-    .filter((item) => item.count > 0)
-    .map((item) => ({
-      name: t(CATEGORY_KEYS[item.category]),
-      value: item.count,
-      fill: `var(--color-${item.category.toLowerCase()})`,
-      category: item.category,
-    }));
+  const chartData = useMemo(() => {
+    const filteredCounts = categoryCounts.filter((item) => item.count > 0);
+    
+    const labels = filteredCounts.map((item) => t(CATEGORY_KEYS[item.category]));
+    const data = filteredCounts.map((item) => item.count);
+    const backgroundColor = filteredCounts.map((item) => {
+      const colors = CATEGORY_COLORS[item.category];
+      return actualTheme === "dark" ? colors.dark : colors.light;
+    });
 
-  // Build chart config with colors
-  const chartConfig = categoryCounts.reduce((config, item) => {
-    const colors = CATEGORY_COLORS[item.category];
-    config[item.category.toLowerCase()] = {
-      label: t(CATEGORY_KEYS[item.category]),
-      theme: {
-        light: colors.light,
-        dark: colors.dark,
-      },
+    // Use white borders to create splitters between segments
+    const whiteBorderColor = actualTheme === "dark" ? "#1f2937" : "#ffffff";
+    const borderColors = Array(data.length).fill(whiteBorderColor);
+
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor,
+          borderColor: borderColors,
+          borderWidth: 4,
+        },
+      ],
     };
-    return config;
-  }, {} as Record<string, { label: string; theme: { light: string; dark: string } }>);
+  }, [categoryCounts, t, actualTheme]);
+
+  const options = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: "60%",
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: actualTheme === "dark" ? "rgba(31, 41, 55, 0.95)" : "rgba(255, 255, 255, 0.95)",
+        titleColor: actualTheme === "dark" ? "#f3f4f6" : "#111827",
+        bodyColor: actualTheme === "dark" ? "#d1d5db" : "#374151",
+        borderColor: actualTheme === "dark" ? "#4b5563" : "#e5e7eb",
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: true,
+        rtl: isRTL,
+        callbacks: {
+          label: function(context: any) {
+            const label = context.label || "";
+            const value = context.parsed || 0;
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+            return `${label}: ${value} (${percentage}%)`;
+          },
+        },
+      },
+    },
+    animation: {
+      animateRotate: true,
+      animateScale: true,
+      duration: 1000,
+    },
+  }), [actualTheme, isRTL]);
 
   return (
     <Card>
@@ -105,34 +155,9 @@ export function MajorsCategoryChart({ title, categoryCounts }: MajorsCategoryCha
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <ChartContainer
-            config={chartConfig}
-            className="h-[200px] w-full"
-          >
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={70}
-                innerRadius={45}
-                fill="#8884d8"
-                dataKey="value"
-                animationBegin={0}
-                animationDuration={1000}
-                isAnimationActive={true}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-              <ChartTooltip
-                content={<ChartTooltipContent />}
-                cursor={{ fill: "transparent" }}
-              />
-            </PieChart>
-          </ChartContainer>
+          <div className="h-[200px] w-full">
+            <Doughnut data={chartData} options={options} />
+          </div>
           <div
             className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-200 ${
               isHovered ? "opacity-30" : "opacity-100"

@@ -1,8 +1,16 @@
-import { PieChart, Pie, Cell } from "recharts";
+import { useMemo, useEffect, useState } from "react";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Doughnut } from "react-chartjs-2";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useI18n } from "@/contexts/I18nContext";
-import { useEffect, useState } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface CommunityStatsChartProps {
   title: string;
@@ -28,6 +36,7 @@ export function CommunityStatsChart({
   pendingReports,
 }: CommunityStatsChartProps) {
   const { t, language } = useI18n();
+  const { actualTheme } = useTheme();
   const [animatedValue, setAnimatedValue] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const isRTL = language === "ar";
@@ -57,59 +66,86 @@ export function CommunityStatsChart({
   }, [total]);
 
   // Prepare chart data
-  const chartData = [
-    {
-      name: t("admin.dashboard.chart.community.posts"),
-      value: posts,
-      fill: "var(--color-posts)",
-    },
-    {
-      name: t("admin.dashboard.chart.community.answers"),
-      value: answers,
-      fill: "var(--color-answers)",
-    },
-    {
-      name: t("admin.dashboard.chart.community.comments"),
-      value: comments,
-      fill: "var(--color-comments)",
-    },
-    {
-      name: t("admin.dashboard.chart.community.pendingReports"),
-      value: pendingReports,
-      fill: "var(--color-pendingReports)",
-    },
-  ].filter((item) => item.value > 0);
+  const chartData = useMemo(() => {
+    const dataItems = [
+      {
+        label: t("admin.dashboard.chart.community.posts"),
+        value: posts,
+        color: actualTheme === "dark" ? STAT_COLORS.posts.dark : STAT_COLORS.posts.light,
+      },
+      {
+        label: t("admin.dashboard.chart.community.answers"),
+        value: answers,
+        color: actualTheme === "dark" ? STAT_COLORS.answers.dark : STAT_COLORS.answers.light,
+      },
+      {
+        label: t("admin.dashboard.chart.community.comments"),
+        value: comments,
+        color: actualTheme === "dark" ? STAT_COLORS.comments.dark : STAT_COLORS.comments.light,
+      },
+      {
+        label: t("admin.dashboard.chart.community.pendingReports"),
+        value: pendingReports,
+        color: actualTheme === "dark" ? STAT_COLORS.pendingReports.dark : STAT_COLORS.pendingReports.light,
+      },
+    ].filter((item) => item.value > 0);
 
-  const chartConfig = {
-    posts: {
-      label: t("admin.dashboard.chart.community.posts"),
-      theme: {
-        light: STAT_COLORS.posts.light,
-        dark: STAT_COLORS.posts.dark,
+    const labels = dataItems.map((item) => item.label);
+    const data = dataItems.map((item) => item.value);
+    const backgroundColor = dataItems.map((item) => item.color);
+
+    // Use white borders to create splitters between segments
+    const whiteBorderColor = actualTheme === "dark" ? "#1f2937" : "#ffffff";
+    const borderColors = Array(data.length).fill(whiteBorderColor);
+
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor,
+          borderColor: borderColors,
+          borderWidth: 4,
+        },
+      ],
+    };
+  }, [posts, answers, comments, pendingReports, t, actualTheme]);
+
+  const options = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: "60%",
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: actualTheme === "dark" ? "rgba(31, 41, 55, 0.95)" : "rgba(255, 255, 255, 0.95)",
+        titleColor: actualTheme === "dark" ? "#f3f4f6" : "#111827",
+        bodyColor: actualTheme === "dark" ? "#d1d5db" : "#374151",
+        borderColor: actualTheme === "dark" ? "#4b5563" : "#e5e7eb",
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: true,
+        rtl: isRTL,
+        callbacks: {
+          label: function(context: any) {
+            const label = context.label || "";
+            const value = context.parsed || 0;
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+            return `${label}: ${value} (${percentage}%)`;
+          },
+        },
       },
     },
-    answers: {
-      label: t("admin.dashboard.chart.community.answers"),
-      theme: {
-        light: STAT_COLORS.answers.light,
-        dark: STAT_COLORS.answers.dark,
-      },
+    animation: {
+      animateRotate: true,
+      animateScale: true,
+      duration: 1000,
     },
-    comments: {
-      label: t("admin.dashboard.chart.community.comments"),
-      theme: {
-        light: STAT_COLORS.comments.light,
-        dark: STAT_COLORS.comments.dark,
-      },
-    },
-    pendingReports: {
-      label: t("admin.dashboard.chart.community.pendingReports"),
-      theme: {
-        light: STAT_COLORS.pendingReports.light,
-        dark: STAT_COLORS.pendingReports.dark,
-      },
-    },
-  };
+  }), [actualTheme, isRTL]);
 
   return (
     <Card>
@@ -122,34 +158,9 @@ export function CommunityStatsChart({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <ChartContainer
-            config={chartConfig}
-            className="h-[200px] w-full"
-          >
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={70}
-                innerRadius={45}
-                fill="#8884d8"
-                dataKey="value"
-                animationBegin={0}
-                animationDuration={1000}
-                isAnimationActive={true}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-              <ChartTooltip
-                content={<ChartTooltipContent />}
-                cursor={{ fill: "transparent" }}
-              />
-            </PieChart>
-          </ChartContainer>
+          <div className="h-[200px] w-full">
+            <Doughnut data={chartData} options={options} />
+          </div>
           <div
             className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-200 ${
               isHovered ? "opacity-30" : "opacity-100"

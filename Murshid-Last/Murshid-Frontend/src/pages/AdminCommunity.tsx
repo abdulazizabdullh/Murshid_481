@@ -25,6 +25,7 @@ import { useI18n } from "@/contexts/I18nContext";
 import { PageAnimation } from "@/components/animations/PageAnimation";
 import { ScrollAnimation } from "@/components/animations/ScrollAnimation";
 import { DeletionReasonDialog } from "@/components/DeletionReasonDialog";
+import { CommunityStatsBarChart } from "@/components/admin/CommunityStatsBarChart";
 import { getCommunityPosts, deleteCommunityPost, deleteCommunityAnswer, deleteComment, getAnswers, getComments, getReports, updateReportStatus, getCommunityPostById } from "@/lib/communityApi";
 import type { Post, Answer, Comment, ReportWithContent, ReportStatus } from "@/types/community";
 import { supabase } from "@/lib/supabase";
@@ -319,55 +320,13 @@ const AdminCommunity = () => {
               </div>
             </div>
 
-            {/* Stats - 2x2 grid on mobile, 4 columns on larger screens */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {language === "ar" ? "إجمالي المنشورات" : "Total Posts"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{posts.filter((p) => !p.is_deleted).length}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {language === "ar" ? "إجمالي الإجابات" : "Total Answers"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{answers.filter((a) => !a.is_deleted).length}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {language === "ar" ? "إجمالي التعليقات" : "Total Comments"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{comments.filter((c) => !c.is_deleted).length}</div>
-                </CardContent>
-              </Card>
-
-              <Card className={pendingReportsCount > 0 ? "border-orange-200 dark:border-orange-800" : ""}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Flag className="w-4 h-4" />
-                    {language === "ar" ? "البلاغات المعلقة" : "Pending Reports"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className={`text-3xl font-bold ${pendingReportsCount > 0 ? "text-orange-600" : ""}`}>
-                    {pendingReportsCount}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Community Statistics Bar Chart */}
+            <CommunityStatsBarChart
+              posts={posts.filter((p) => !p.is_deleted).length}
+              answers={answers.filter((a) => !a.is_deleted).length}
+              comments={comments.filter((c) => !c.is_deleted).length}
+              pendingReports={pendingReportsCount}
+            />
 
             {/* Content Tabs */}
             {loading ? (

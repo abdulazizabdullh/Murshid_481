@@ -168,6 +168,12 @@ const translations = {
     'profile.display.userFallback': 'User',
     'profile.validation.nameMax': 'Name must be less than 100 characters',
     'profile.validation.emailMax': 'Email must be less than 255 characters',
+    'profile.chart.title': 'Activity Overview',
+    'profile.chart.activity': 'Activity',
+    'profile.chart.posts': 'Posts',
+    'profile.chart.answers': 'Answers',
+    'profile.chart.likes': 'Likes',
+    'profile.chart.bookmarks': 'Bookmarks',
 
     // Admin Dashboard
     'admin.dashboard.toast.accessDenied': 'Access denied. Admin privileges required.',
@@ -270,6 +276,12 @@ const translations = {
     'admin.majors.toast.deleteConfirm': 'Are you sure you want to delete this major?',
     'admin.majors.toast.deleteSuccess': 'Major deleted successfully',
     'admin.majors.toast.deleteError': 'Failed to delete major',
+    'admin.majors.chart.title': 'Majors by Category',
+    'admin.majors.chart.numberOfMajors': 'Number of Majors',
+    'admin.majors.chart.majors': 'Majors',
+    'admin.community.chart.title': 'Community Statistics',
+    'admin.community.chart.numberOfItems': 'Number of Items',
+    'admin.community.chart.items': 'items',
 
     // Admin Universities
     'admin.universities.title': 'Manage Universities',
@@ -307,6 +319,9 @@ const translations = {
     'admin.universities.toast.deleteConfirm': 'Are you sure you want to delete this university?',
     'admin.universities.toast.deleteSuccess': 'University deleted successfully',
     'admin.universities.toast.deleteError': 'Failed to delete university',
+    'admin.universities.chart.title': 'Majors by University',
+    'admin.universities.chart.numberOfMajors': 'Number of Majors',
+    'admin.universities.chart.majors': 'Majors',
 
     // Majors & Universities Pages
     'majors.title': 'Explore University Majors',
@@ -506,6 +521,12 @@ const translations = {
     'profile.display.userFallback': 'مستخدم',
     'profile.validation.nameMax': 'يجب أن يكون الاسم أقل من 100 حرف',
     'profile.validation.emailMax': 'يجب أن يكون البريد الإلكتروني أقل من 255 حرفاً',
+    'profile.chart.title': 'نظرة عامة على النشاط',
+    'profile.chart.activity': 'النشاط',
+    'profile.chart.posts': 'المنشورات',
+    'profile.chart.answers': 'الإجابات',
+    'profile.chart.likes': 'الإعجابات',
+    'profile.chart.bookmarks': 'المحفوظات',
 
     // Admin Dashboard
     'admin.dashboard.toast.accessDenied': 'تم رفض الوصول. يتطلب ذلك صلاحيات المدير.',
@@ -608,6 +629,12 @@ const translations = {
     'admin.majors.toast.deleteConfirm': 'هل أنت متأكد من أنك تريد حذف هذا التخصص؟',
     'admin.majors.toast.deleteSuccess': 'تم حذف التخصص بنجاح',
     'admin.majors.toast.deleteError': 'فشل حذف التخصص',
+    'admin.majors.chart.title': 'التخصصات حسب الفئة',
+    'admin.majors.chart.numberOfMajors': 'عدد التخصصات',
+    'admin.majors.chart.majors': 'التخصصات',
+    'admin.community.chart.title': 'إحصائيات المجتمع',
+    'admin.community.chart.numberOfItems': 'عدد العناصر',
+    'admin.community.chart.items': 'عناصر',
 
     // Admin Universities
     'admin.universities.title': 'إدارة الجامعات',
@@ -645,6 +672,9 @@ const translations = {
     'admin.universities.toast.deleteConfirm': 'هل أنت متأكد من أنك تريد حذف هذه الجامعة؟',
     'admin.universities.toast.deleteSuccess': 'تم حذف الجامعة بنجاح',
     'admin.universities.toast.deleteError': 'فشل حذف الجامعة',
+    'admin.universities.chart.title': 'التخصصات حسب الجامعة',
+    'admin.universities.chart.numberOfMajors': 'عدد التخصصات',
+    'admin.universities.chart.majors': 'التخصصات',
 
     // Majors & Universities Pages
     'majors.title': 'استكشف التخصصات الجامعية',

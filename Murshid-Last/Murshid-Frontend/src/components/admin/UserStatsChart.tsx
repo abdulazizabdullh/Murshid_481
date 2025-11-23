@@ -1,8 +1,16 @@
-import { PieChart, Pie, Cell } from "recharts";
+import { useMemo, useEffect, useState } from "react";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Doughnut } from "react-chartjs-2";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useI18n } from "@/contexts/I18nContext";
-import { useEffect, useState } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface UserStatsChartProps {
   title: string;
@@ -28,6 +36,7 @@ export function UserStatsChart({
   type,
 }: UserStatsChartProps) {
   const { t, language } = useI18n();
+  const { actualTheme } = useTheme();
   const [animatedValue, setAnimatedValue] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const isRTL = language === "ar";
@@ -55,74 +64,95 @@ export function UserStatsChart({
   }, [total]);
 
   // Prepare chart data based on type
-  const getChartData = () => {
+  const chartData = useMemo(() => {
+    let labels: string[] = [];
+    let data: number[] = [];
+    let backgroundColor: string[] = [];
+
     if (type === "total") {
-      const data = [];
       if (students > 0) {
-        data.push({
-          name: t("admin.dashboard.chart.students"),
-          value: students,
-          fill: "var(--color-students)",
-        });
+        labels.push(t("admin.dashboard.chart.students"));
+        data.push(students);
+        const color = actualTheme === "dark" ? COLORS.students.dark : COLORS.students.light;
+        backgroundColor.push(color);
       }
       if (specialists > 0) {
-        data.push({
-          name: t("admin.dashboard.chart.specialists"),
-          value: specialists,
-          fill: "var(--color-specialists)",
-        });
+        labels.push(t("admin.dashboard.chart.specialists"));
+        data.push(specialists);
+        const color = actualTheme === "dark" ? COLORS.specialists.dark : COLORS.specialists.light;
+        backgroundColor.push(color);
       }
       if (others > 0) {
-        data.push({
-          name: t("admin.dashboard.chart.admins"),
-          value: others,
-          fill: "var(--color-admins)",
-        });
+        labels.push(t("admin.dashboard.chart.admins"));
+        data.push(others);
+        const color = actualTheme === "dark" ? COLORS.admins.dark : COLORS.admins.light;
+        backgroundColor.push(color);
       }
-      return data;
     } else if (type === "students") {
-      return [
-        {
-          name: t("admin.dashboard.chart.students"),
-          value: students,
-          fill: "var(--color-students)",
-        },
-      ];
+      labels = [t("admin.dashboard.chart.students")];
+      data = [students];
+      const color = actualTheme === "dark" ? COLORS.students.dark : COLORS.students.light;
+      backgroundColor = [color];
     } else {
-      return [
-        {
-          name: t("admin.dashboard.chart.specialists"),
-          value: specialists,
-          fill: "var(--color-specialists)",
-        },
-      ];
+      labels = [t("admin.dashboard.chart.specialists")];
+      data = [specialists];
+      const color = actualTheme === "dark" ? COLORS.specialists.dark : COLORS.specialists.light;
+      backgroundColor = [color];
     }
-  };
 
-  const chartData = getChartData();
-  const chartConfig = {
-    students: {
-      label: t("admin.dashboard.chart.students"),
-      theme: {
-        light: COLORS.students.light,
-        dark: COLORS.students.dark,
+    // Use white borders to create splitters between segments
+    // In dark mode, use a dark gray that matches the background
+    const whiteBorderColor = actualTheme === "dark" ? "#1f2937" : "#ffffff";
+    const borderColors = Array(data.length).fill(whiteBorderColor);
+
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor,
+          borderColor: borderColors,
+          borderWidth: 4,
+        },
+      ],
+    };
+  }, [type, students, specialists, others, t, actualTheme]);
+
+  const options = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: "60%",
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: actualTheme === "dark" ? "rgba(31, 41, 55, 0.95)" : "rgba(255, 255, 255, 0.95)",
+        titleColor: actualTheme === "dark" ? "#f3f4f6" : "#111827",
+        bodyColor: actualTheme === "dark" ? "#d1d5db" : "#374151",
+        borderColor: actualTheme === "dark" ? "#4b5563" : "#e5e7eb",
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: true,
+        rtl: isRTL,
+        callbacks: {
+          label: function(context: any) {
+            const label = context.label || "";
+            const value = context.parsed || 0;
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+            return `${label}: ${value} (${percentage}%)`;
+          },
+        },
       },
     },
-    specialists: {
-      label: t("admin.dashboard.chart.specialists"),
-      theme: {
-        light: COLORS.specialists.light,
-        dark: COLORS.specialists.dark,
-      },
+    animation: {
+      animateRotate: true,
+      animateScale: true,
+      duration: 1000,
     },
-    admins: {
-      label: t("admin.dashboard.chart.admins"),
-      theme: {
-        light: COLORS.admins.light,
-        dark: COLORS.admins.dark,
-      },
-    },
-  };
+  }), [actualTheme, isRTL]);
 
   return (
     <Card>
@@ -135,34 +165,9 @@ export function UserStatsChart({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <ChartContainer
-            config={chartConfig}
-            className="h-[200px] w-full"
-          >
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={70}
-                innerRadius={45}
-                fill="#8884d8"
-                dataKey="value"
-                animationBegin={0}
-                animationDuration={1000}
-                isAnimationActive={true}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-              <ChartTooltip
-                content={<ChartTooltipContent />}
-                cursor={{ fill: "transparent" }}
-              />
-            </PieChart>
-          </ChartContainer>
+          <div className="h-[200px] w-full">
+            <Doughnut data={chartData} options={options} />
+          </div>
           <div
             className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-200 ${
               isHovered ? "opacity-30" : "opacity-100"
