@@ -542,10 +542,12 @@ export default function CommunityEnhanced() {
                                   <span className="font-medium">{post.answers_count}</span>
                                 </Button>
                                 
+                                {/* VIEWS FEATURE DISABLED
                                 <div className="flex items-center gap-1 text-gray-500">
                                   <Eye className="w-4 h-4" />
                                   <span className="font-medium">{post.views_count}</span>
                                 </div>
+                                */}
                                 
                                 {post.is_solved && (
                                   <div className="flex items-center gap-1 text-green-600">

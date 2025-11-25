@@ -410,10 +410,12 @@ const AdminCommunity = () => {
                                   <MessageSquare className="w-4 h-4" />
                                   <span>{post.answers_count || 0}</span>
                                 </div>
+                                {/* VIEWS FEATURE DISABLED
                                 <div className="flex items-center gap-1">
                                   <Eye className="w-4 h-4" />
                                   <span>{post.views_count || 0}</span>
                                 </div>
+                                */}
                                 <span>{formatTimeAgo(post.created_at, language)}</span>
                               </div>
                             </div>
