@@ -152,6 +152,11 @@ export function UniversitiesMajorsBarChart({ universities }: UniversitiesMajorsB
         displayColors: true,
         rtl: isRTL,
         callbacks: {
+          title: function(context: any) {
+            // Show full university name in tooltip title
+            const index = context[0].dataIndex;
+            return universityMajorsCount[index]?.name || '';
+          },
           label: function(context: any) {
             return `${context.parsed.y} ${t('admin.universities.chart.majors')}`;
           },
@@ -178,8 +183,16 @@ export function UniversitiesMajorsBarChart({ universities }: UniversitiesMajorsB
           font: {
             size: 12,
           },
-          maxRotation: 45,
+          maxRotation: 0,
           minRotation: 0,
+          callback: function(value: any, index: number) {
+            const label = this.getLabelForValue(value);
+            const maxLength = 25;
+            if (label && label.length > maxLength) {
+              return label.substring(0, maxLength) + '...';
+            }
+            return label;
+          },
         },
         grid: {
           display: false,
@@ -190,7 +203,7 @@ export function UniversitiesMajorsBarChart({ universities }: UniversitiesMajorsB
       duration: 1000,
       easing: 'easeOutQuad' as const,
     },
-  }), [actualTheme, isRTL, t]);
+  }), [actualTheme, isRTL, t, universityMajorsCount]);
 
   if (loading) {
     return (
@@ -201,7 +214,7 @@ export function UniversitiesMajorsBarChart({ universities }: UniversitiesMajorsB
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] w-full flex items-center justify-center">
+          <div className="h-[400px] w-full flex items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
           </div>
         </CardContent>
@@ -221,7 +234,7 @@ export function UniversitiesMajorsBarChart({ universities }: UniversitiesMajorsB
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px] w-full" dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="h-[400px] w-full" dir={isRTL ? 'rtl' : 'ltr'}>
           <Bar data={chartData} options={options} />
         </div>
       </CardContent>

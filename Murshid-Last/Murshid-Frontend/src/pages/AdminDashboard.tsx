@@ -1150,7 +1150,7 @@ const AdminDashboard = () => {
                                       size="sm"
                                       id={`admin-dashboard-action-specialist-${userData.id}`}
                                       disabled={processing}
-                                      className="rounded-xl border-2 text-blue-600 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-300 hover:shadow-lg gap-1"
+                                      className="rounded-xl border-2 text-blue-600 dark:text-blue-400 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 hover:shadow-lg gap-1"
                                     >
                                       Take Action
                                       <ChevronDown className="w-3 h-3 ml-1" />

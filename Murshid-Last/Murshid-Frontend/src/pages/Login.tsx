@@ -80,7 +80,7 @@ const Login = () => {
             variant="outline"
             size="sm"
             onClick={toggleLanguage}
-            className="rounded-full px-4 py-2 border-2 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            className="rounded-full px-4 py-2 border-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400"
           >
             <Languages className="w-4 h-4 mr-2" />
             {language === 'en' ? 'عربي' : 'English'}
