@@ -40,6 +40,7 @@ import {
 import type { University, UniversityType } from '@/types/database';
 import { toast } from 'sonner';
 import { useI18n } from '@/contexts/I18nContext';
+import { UniversitiesMajorsBarChart } from '@/components/admin/UniversitiesMajorsBarChart';
 
 export default function AdminUniversities() {
   const navigate = useNavigate();
@@ -213,6 +214,11 @@ export default function AdminUniversities() {
             {t('admin.universities.add')}
           </Button>
         </div>
+
+        {/* Universities Majors Bar Chart */}
+        {!loading && universities.length > 0 && (
+          <UniversitiesMajorsBarChart universities={universities} />
+        )}
 
         {/* Search */}
         <div className="mb-6">

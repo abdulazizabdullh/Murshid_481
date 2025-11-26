@@ -170,10 +170,12 @@ export default function MyLikes() {
                               <MessageCircle className="w-4 h-4" />
                               <span>{post.answers_count || 0}</span>
                             </div>
+                            {/* VIEWS FEATURE DISABLED
                             <div className="flex items-center gap-1">
                               <Eye className="w-4 h-4" />
                               <span>{post.views_count || 0}</span>
                             </div>
+                            */}
                           </div>
                           <span className="text-sm text-gray-500">
                             {formatTimeAgo(post.created_at, language)}

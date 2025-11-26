@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { UserActivityRadarChart } from "@/components/UserActivityRadarChart";
 
 interface ProfileSectionProps {
   onClose?: () => void;
@@ -308,6 +309,10 @@ const ProfileSection = ({ onClose }: ProfileSectionProps = {}) => {
           </CardHeader>
           
           <CardContent className="space-y-6 pt-6">
+            {/* Activity Radar Chart - Only show for non-admin users */}
+            {!isEditing && user && !user.is_admin && (
+              <UserActivityRadarChart userId={user.id} />
+            )}
 
             {isEditing ? (
               <div className="space-y-4">

@@ -222,10 +222,12 @@ export default function MyPosts() {
                                 <MessageCircle className="w-4 h-4" />
                                 <span>{post.answers_count}</span>
                               </div>
+                              {/* VIEWS FEATURE DISABLED
                               <div className="flex items-center gap-1">
                                 <Eye className="w-4 h-4" />
                                 <span>{post.views_count}</span>
                               </div>
+                              */}
                               {post.is_solved && (
                                 <div className="flex items-center gap-1 text-green-600">
                                   <CheckCircle className="w-4 h-4" />
@@ -373,10 +375,12 @@ export default function MyPosts() {
                                   <MessageCircle className="w-4 h-4" />
                                   <span>{post.answers_count}</span>
                                 </div>
+                                {/* VIEWS FEATURE DISABLED
                                 <div className="flex items-center gap-1">
                                   <Eye className="w-4 h-4" />
                                   <span>{post.views_count}</span>
                                 </div>
+                                */}
                                 {post.is_solved && (
                                   <div className="flex items-center gap-1 text-green-600">
                                     <CheckCircle className="w-4 h-4" />

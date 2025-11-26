@@ -25,7 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Post, Answer } from '@/types/community';
 import { analyzeContent } from '@/lib/contentFilter';
 import { toast } from 'sonner';
-import { getCommunityPostById, getPostAnswers, createCommunityAnswer, submitCommunityReport } from '@/lib/communityApi';
+import { getCommunityPostById, getPostAnswers, createCommunityAnswer, createReport } from '@/lib/communityApi';
 
 interface Reply {
   id: string;
@@ -244,25 +244,15 @@ export default function PostDetailEnhanced() {
     }
     setReportingId(targetId);
     try {
-      await submitCommunityReport(
+      await createReport(
         {
-          target_type: targetType,
-          target_id: targetId,
-          reason: reason.trim(),
-          target_title: targetTitle,
-          target_excerpt: targetExcerpt.slice(0, 180),
+          reported_content_type: targetType,
+          reported_content_id: targetId,
+          reason: 'inappropriate' as const, // Default reason, can be enhanced later
+          description: reason.trim(),
         },
-        {
-          id: user.id,
-          name: user.name || user.email,
-          role: user.role,
-          establishment_name: user.establishment_name,
-          track: user.track,
-          level: user.level,
-          university_id: user.university_id,
-          avatar_url: user.avatar_url,
-          is_admin: user.is_admin,
-        }
+        user.id,
+        user.name || user.email
       );
       toast.success(language === 'ar' ? 'تم إرسال البلاغ' : 'Report submitted');
     } catch (error: any) {
@@ -560,10 +550,12 @@ export default function PostDetailEnhanced() {
                       <span className="font-medium">{post.answers_count}</span>
                     </div>
                     
+                    {/* VIEWS FEATURE DISABLED
                     <div className="flex items-center gap-1 text-gray-500">
                       <Eye className="w-5 h-5" />
                       <span className="font-medium">{post.views_count}</span>
                     </div>
+                    */}
                     
                     {post.is_solved && (
                       <div className="flex items-center gap-1 text-green-600">

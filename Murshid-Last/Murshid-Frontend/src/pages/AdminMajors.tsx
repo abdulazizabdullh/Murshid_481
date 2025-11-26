@@ -39,6 +39,9 @@ import {
 import type { Major, MajorCategory, DegreeType } from '@/types/database';
 import { toast } from 'sonner';
 import { useI18n } from '@/contexts/I18nContext';
+import { MajorsCategoryBarChart } from '@/components/admin/MajorsCategoryBarChart';
+import { PageAnimation } from '@/components/animations/PageAnimation';
+import { ScrollAnimation } from '@/components/animations/ScrollAnimation';
 
 export default function AdminMajors() {
   const navigate = useNavigate();
@@ -180,10 +183,12 @@ export default function AdminMajors() {
   const degreeTypes: DegreeType[] = ['Bachelor', 'Master', 'PhD', 'Diploma'];
 
   return (
-    <div className="admin-layout min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navbar />
-      
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 pt-12 pb-20">
+    <PageAnimation>
+      <div className="admin-layout min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Navbar />
+        
+        <ScrollAnimation>
+          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 pt-12 pb-20">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -206,6 +211,11 @@ export default function AdminMajors() {
             {t('admin.majors.add')}
           </Button>
         </div>
+
+        {/* Category Bar Chart */}
+        {!loading && majors.length > 0 && (
+          <MajorsCategoryBarChart majors={majors} />
+        )}
 
         {/* Search */}
         <div className="mb-6">
@@ -293,7 +303,8 @@ export default function AdminMajors() {
             <p className="text-gray-600 dark:text-gray-400" dir={language}>{t('admin.majors.noResults')}</p>
           </div>
         )}
-      </div>
+          </div>
+        </ScrollAnimation>
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -480,7 +491,8 @@ export default function AdminMajors() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </PageAnimation>
   );
 }
 

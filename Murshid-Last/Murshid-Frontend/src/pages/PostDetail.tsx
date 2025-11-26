@@ -37,7 +37,7 @@ import {
   getCommunityPostById,
   getPostAnswers,
   createCommunityAnswer,
-  incrementPostViews,
+  // incrementPostViews, // VIEWS FEATURE DISABLED
   getUserPostLike,
   getUserAnswerLike,
   likePost,
@@ -95,8 +95,8 @@ export default function PostDetail() {
   useEffect(() => {
     if (id) {
       fetchPostDetails();
-      // Increment view count
-      incrementPostViews(id).catch(console.error);
+      // Increment view count - VIEWS FEATURE DISABLED
+      // incrementPostViews(id).catch(console.error);
     }
   }, [id]);
 
@@ -493,10 +493,12 @@ export default function PostDetail() {
                         )}
                       </>
                     )}
+                    {/* VIEWS FEATURE DISABLED
                     <div className="flex items-center gap-1">
                       <Eye className="w-4 h-4" />
                       <span>{post.views_count || 0}</span>
                     </div>
+                    */}
                   </div>
                 </div>
               </div>

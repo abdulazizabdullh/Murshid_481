@@ -37,6 +37,14 @@ import { Link } from "react-router-dom";
 import { useI18n } from "@/contexts/I18nContext";
 import { PageAnimation } from "@/components/animations/PageAnimation";
 import { ScrollAnimation } from "@/components/animations/ScrollAnimation";
+import { UserStatsChart } from "@/components/admin/UserStatsChart";
+import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MajorsCategoryChart } from "@/components/admin/MajorsCategoryChart";
+import { CommunityStatsChart } from "@/components/admin/CommunityStatsChart";
+import { getMajors } from "@/lib/majorsApi";
+import { getAllCommunityPostsForAdmin, getAnswers, getComments, getReports } from "@/lib/communityApi";
+import type { MajorCategory } from "@/types/database";
 
 interface UserData {
   id: string;
@@ -64,6 +72,12 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [majors, setMajors] = useState<any[]>([]);
+  const [communityPosts, setCommunityPosts] = useState<any[]>([]);
+  const [communityAnswers, setCommunityAnswers] = useState<any[]>([]);
+  const [communityComments, setCommunityComments] = useState<any[]>([]);
+  const [pendingReports, setPendingReports] = useState<any[]>([]);
+  const [chartsReady, setChartsReady] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
@@ -127,29 +141,6 @@ const AdminDashboard = () => {
       toast.error("Failed to open proof document.");
     }
   };
-
-  useEffect(() => {
-    // Don't check admin access while still loading
-    if (authLoading) {
-      return;
-    }
-    
-    // Check if user is admin
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    
-    if (user.is_admin === false) {
-      toast.error(t("admin.dashboard.toast.accessDenied"));
-      navigate("/");
-      return;
-    }
-
-    if (user.is_admin === true) {
-      fetchUsers();
-    }
-  }, [user, authLoading, navigate]);
 
   const fetchUsers = async () => {
     try {
@@ -216,6 +207,69 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   };
+
+  const fetchMajors = async () => {
+    try {
+      const majorsData = await getMajors();
+      setMajors(majorsData);
+    } catch (error) {
+      console.error("Error fetching majors:", error);
+    }
+  };
+
+  const fetchCommunityData = async () => {
+    try {
+      // Fetch all community data
+      const [postsData, answersData, commentsData, reportsData] = await Promise.all([
+        getAllCommunityPostsForAdmin(),
+        getAnswers(),
+        getComments(),
+        getReports({ status: "pending" }),
+      ]);
+
+      setCommunityPosts(postsData);
+      setCommunityAnswers(answersData);
+      setCommunityComments(commentsData);
+      setPendingReports(reportsData);
+    } catch (error) {
+      console.error("Error fetching community data:", error);
+    }
+  };
+
+  const refreshAllData = async () => {
+    setChartsReady(false);
+    await Promise.all([
+      fetchUsers(),
+      fetchMajors(),
+      fetchCommunityData(),
+    ]);
+    setTimeout(() => {
+      setChartsReady(true);
+    }, 100);
+  };
+
+  useEffect(() => {
+    // Don't check admin access while still loading
+    if (authLoading) {
+      return;
+    }
+    
+    // Check if user is admin
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    
+    if (user.is_admin === false) {
+      toast.error(t("admin.dashboard.toast.accessDenied"));
+      navigate("/");
+      return;
+    }
+
+    if (user.is_admin === true) {
+      refreshAllData();
+    }
+  }, [user, authLoading, navigate]);
 
   // Filter users based on search term
   useEffect(() => {
@@ -607,7 +661,7 @@ const AdminDashboard = () => {
             </div>
             <div className="flex items-center gap-2">
               <Button 
-                onClick={fetchUsers} 
+                onClick={refreshAllData} 
                 id="admin-dashboard-refresh-button"
                 variant="outline" 
                 className="rounded-2xl px-6 py-3 border-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 gap-2"
@@ -620,38 +674,109 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Stats Card */}
+        {/* Stats Charts */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.dashboard.stats.totalUsers")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{users.length}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.dashboard.stats.students")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {users.filter((u) => u.role === "Student").length}
-              </div>
-            </CardContent>
-          </Card>
+          {(() => {
+            const totalUsers = users.length;
+            const studentsCount = users.filter((u) => u.role === "Student").length;
+            const specialistsCount = users.filter((u) => u.role === "Specialist").length;
+            const othersCount = totalUsers - studentsCount - specialistsCount;
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.dashboard.stats.specialists")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {users.filter((u) => u.role === "Specialist").length}
-              </div>
-            </CardContent>
-          </Card>
+            // Calculate majors by category
+            const categoryCounts: { category: MajorCategory; count: number }[] = [];
+            const categories: MajorCategory[] = ['Engineering', 'Medicine', 'Business', 'Arts', 'Science', 'IT', 'Law', 'Education', 'Other'];
+            
+            categories.forEach((category) => {
+              const count = majors.filter((m) => m.category === category).length;
+              categoryCounts.push({ category, count });
+            });
+
+            // Chart animation variants
+            const chartVariants = {
+              hidden: { 
+                opacity: 0, 
+                scale: 0.8,
+                y: 20
+              },
+              visible: { 
+                opacity: 1, 
+                scale: 1,
+                y: 0,
+                transition: {
+                  duration: 0.6,
+                  ease: [0.4, 0, 0.2, 1] as const
+                }
+              }
+            };
+
+            // Loading skeleton component
+            const ChartSkeleton = () => (
+              <Card>
+                <CardHeader className="pb-2">
+                  <Skeleton className="h-4 w-24" />
+                </CardHeader>
+                <CardContent>
+                  <div className="relative h-[200px] flex items-center justify-center">
+                    <Skeleton className="h-32 w-32 rounded-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+
+            if (!chartsReady) {
+              return (
+                <>
+                  <ChartSkeleton />
+                  <ChartSkeleton />
+                  <ChartSkeleton />
+                </>
+              );
+            }
+
+            return (
+              <>
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={chartVariants}
+                >
+                  <UserStatsChart
+                    title={t("admin.dashboard.stats.totalUsers")}
+                    total={totalUsers}
+                    students={studentsCount}
+                    specialists={specialistsCount}
+                    others={othersCount}
+                    type="total"
+                  />
+                </motion.div>
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={chartVariants}
+                  transition={{ delay: 0.2 }}
+                >
+                  <MajorsCategoryChart
+                    title={t("admin.dashboard.stats.totalMajors")}
+                    categoryCounts={categoryCounts}
+                  />
+                </motion.div>
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={chartVariants}
+                  transition={{ delay: 0.4 }}
+                >
+                  <CommunityStatsChart
+                    title={t("admin.dashboard.stats.communityPosts")}
+                    posts={communityPosts.filter((p) => !p.is_deleted).length}
+                    answers={communityAnswers.filter((a) => !a.is_deleted).length}
+                    comments={communityComments.filter((c) => !c.is_deleted).length}
+                    pendingReports={pendingReports.length}
+                  />
+                </motion.div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Quick Actions */}
@@ -1025,7 +1150,7 @@ const AdminDashboard = () => {
                                       size="sm"
                                       id={`admin-dashboard-action-specialist-${userData.id}`}
                                       disabled={processing}
-                                      className="rounded-xl border-2 text-blue-600 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-300 hover:shadow-lg gap-1"
+                                      className="rounded-xl border-2 text-blue-600 dark:text-blue-400 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 hover:shadow-lg gap-1"
                                     >
                                       Take Action
                                       <ChevronDown className="w-3 h-3 ml-1" />

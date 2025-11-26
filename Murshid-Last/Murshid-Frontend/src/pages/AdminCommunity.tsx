@@ -25,6 +25,7 @@ import { useI18n } from "@/contexts/I18nContext";
 import { PageAnimation } from "@/components/animations/PageAnimation";
 import { ScrollAnimation } from "@/components/animations/ScrollAnimation";
 import { DeletionReasonDialog } from "@/components/DeletionReasonDialog";
+import { CommunityStatsBarChart } from "@/components/admin/CommunityStatsBarChart";
 import { getCommunityPosts, deleteCommunityPost, deleteCommunityAnswer, deleteComment, getAnswers, getComments, getReports, updateReportStatus, getCommunityPostById } from "@/lib/communityApi";
 import type { Post, Answer, Comment, ReportWithContent, ReportStatus } from "@/types/community";
 import { supabase } from "@/lib/supabase";
@@ -319,55 +320,13 @@ const AdminCommunity = () => {
               </div>
             </div>
 
-            {/* Stats - 2x2 grid on mobile, 4 columns on larger screens */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {language === "ar" ? "إجمالي المنشورات" : "Total Posts"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{posts.length}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {language === "ar" ? "إجمالي الإجابات" : "Total Answers"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{answers.length}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {language === "ar" ? "إجمالي التعليقات" : "Total Comments"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{comments.length}</div>
-                </CardContent>
-              </Card>
-
-              <Card className={pendingReportsCount > 0 ? "border-orange-200 dark:border-orange-800" : ""}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Flag className="w-4 h-4" />
-                    {language === "ar" ? "البلاغات المعلقة" : "Pending Reports"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className={`text-3xl font-bold ${pendingReportsCount > 0 ? "text-orange-600" : ""}`}>
-                    {pendingReportsCount}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Community Statistics Bar Chart */}
+            <CommunityStatsBarChart
+              posts={posts.filter((p) => !p.is_deleted).length}
+              answers={answers.filter((a) => !a.is_deleted).length}
+              comments={comments.filter((c) => !c.is_deleted).length}
+              pendingReports={pendingReportsCount}
+            />
 
             {/* Content Tabs */}
             {loading ? (
@@ -378,13 +337,13 @@ const AdminCommunity = () => {
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "posts" | "answers" | "comments" | "reports")}>
                 <TabsList className="mb-6 grid grid-cols-2 xl:inline-flex w-full xl:w-auto h-auto">
                   <TabsTrigger value="posts" className="whitespace-nowrap">
-                    {language === "ar" ? `المنشورات (${posts.length})` : `Posts (${posts.length})`}
+                    {language === "ar" ? `المنشورات (${posts.filter(p => !p.is_deleted).length})` : `Posts (${posts.filter(p => !p.is_deleted).length})`}
                   </TabsTrigger>
                   <TabsTrigger value="answers" className="whitespace-nowrap">
-                    {language === "ar" ? `الإجابات (${answers.length})` : `Answers (${answers.length})`}
+                    {language === "ar" ? `الإجابات (${answers.filter(a => !a.is_deleted).length})` : `Answers (${answers.filter(a => !a.is_deleted).length})`}
                   </TabsTrigger>
                   <TabsTrigger value="comments" className="whitespace-nowrap">
-                    {language === "ar" ? `التعليقات (${comments.length})` : `Comments (${comments.length})`}
+                    {language === "ar" ? `التعليقات (${comments.filter(c => !c.is_deleted).length})` : `Comments (${comments.filter(c => !c.is_deleted).length})`}
                   </TabsTrigger>
                   <TabsTrigger value="reports" className="relative whitespace-nowrap">
                     <Flag className="w-4 h-4 mr-2" />
@@ -399,7 +358,7 @@ const AdminCommunity = () => {
 
                 {/* Posts Tab */}
                 <TabsContent value="posts">
-                  {posts.length === 0 ? (
+                  {posts.filter(p => !p.is_deleted).length === 0 ? (
                     <Card className="p-12 text-center">
                       <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
@@ -451,10 +410,12 @@ const AdminCommunity = () => {
                                   <MessageSquare className="w-4 h-4" />
                                   <span>{post.answers_count || 0}</span>
                                 </div>
+                                {/* VIEWS FEATURE DISABLED
                                 <div className="flex items-center gap-1">
                                   <Eye className="w-4 h-4" />
                                   <span>{post.views_count || 0}</span>
                                 </div>
+                                */}
                                 <span>{formatTimeAgo(post.created_at, language)}</span>
                               </div>
                             </div>
@@ -479,7 +440,7 @@ const AdminCommunity = () => {
 
                 {/* Answers Tab */}
                 <TabsContent value="answers">
-                  {answers.length === 0 ? (
+                  {answers.filter(a => !a.is_deleted).length === 0 ? (
                     <Card className="p-12 text-center">
                       <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
@@ -551,7 +512,7 @@ const AdminCommunity = () => {
 
                 {/* Comments Tab */}
                 <TabsContent value="comments">
-                  {comments.length === 0 ? (
+                  {comments.filter(c => !c.is_deleted).length === 0 ? (
                     <Card className="p-12 text-center">
                       <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">

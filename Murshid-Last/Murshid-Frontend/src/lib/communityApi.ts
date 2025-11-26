@@ -46,7 +46,8 @@ const mapPost = (row: any): Post => ({
   university_tags: row.university_tags ?? [],
   likes_count: row.likes_count ?? 0,
   answers_count: row.answers_count ?? 0,
-  views_count: row.views_count ?? 0,
+  // views_count: row.views_count ?? 0, // VIEWS FEATURE DISABLED
+  views_count: 0, // VIEWS FEATURE DISABLED - keeping for type compatibility
   is_solved: row.is_solved ?? false,
   created_at: row.created_at,
   updated_at: row.updated_at,
@@ -113,7 +114,49 @@ export async function getCommunityPosts(params?: { search?: string; type?: "all"
     throw error;
   }
 
-  return (data ?? []).map(mapPost);
+  if (!data || data.length === 0) {
+    return [];
+  }
+
+  // Calculate counts dynamically
+  const postIds = data.map(p => p.id);
+  
+  // Get actual likes counts
+  const { data: likesData } = await supabase
+    .from("community_post_likes")
+    .select("post_id")
+    .in("post_id", postIds);
+  
+  const likesCountMap = new Map<string, number>();
+  if (likesData) {
+    likesData.forEach(like => {
+      likesCountMap.set(like.post_id, (likesCountMap.get(like.post_id) || 0) + 1);
+    });
+  }
+
+  // Get actual answers counts (excluding deleted)
+  const { data: answersData } = await supabase
+    .from("community_answers")
+    .select("post_id")
+    .in("post_id", postIds)
+    .eq("is_deleted", false);
+  
+  const answersCountMap = new Map<string, number>();
+  if (answersData) {
+    answersData.forEach(answer => {
+      answersCountMap.set(answer.post_id, (answersCountMap.get(answer.post_id) || 0) + 1);
+    });
+  }
+
+  // Map posts with dynamic counts
+  return data.map(row => {
+    const post = mapPost(row);
+    post.likes_count = likesCountMap.get(post.id) || 0;
+    post.answers_count = answersCountMap.get(post.id) || 0;
+    // views_count stays as stored (updated by increment function) - VIEWS FEATURE DISABLED
+    post.views_count = 0; // VIEWS FEATURE DISABLED
+    return post;
+  });
 }
 
 export async function getCommunityPostById(id: string): Promise<Post | null> {
@@ -128,7 +171,31 @@ export async function getCommunityPostById(id: string): Promise<Post | null> {
     throw error;
   }
 
-  return data ? mapPost(data) : null;
+  if (!data) {
+    return null;
+  }
+
+  // Calculate counts dynamically for consistency
+  // Get actual likes count
+  const { count: likesCount } = await supabase
+    .from("community_post_likes")
+    .select("*", { count: "exact", head: true })
+    .eq("post_id", id);
+
+  // Get actual answers count (excluding deleted)
+  const { count: answersCount } = await supabase
+    .from("community_answers")
+    .select("*", { count: "exact", head: true })
+    .eq("post_id", id)
+    .eq("is_deleted", false);
+
+  const post = mapPost(data);
+  post.likes_count = likesCount || 0;
+  post.answers_count = answersCount || 0;
+  // views_count stays as stored (updated by increment function) - VIEWS FEATURE DISABLED
+  post.views_count = 0; // VIEWS FEATURE DISABLED
+
+  return post;
 }
 
 export async function createCommunityPost(payload: CreatePostRequest, author: CommunityAuthor): Promise<Post> {
@@ -444,9 +511,10 @@ export async function getUserCommentLike(commentId: string, userId: string): Pro
 }
 
 // ============================================================================
-// VIEWS SYSTEM
+// VIEWS SYSTEM - DISABLED
 // ============================================================================
 
+/* VIEWS FEATURE DISABLED
 export async function incrementPostViews(postId: string): Promise<void> {
   const { error } = await supabase.rpc("increment_post_views", { p_post_id: postId });
 
@@ -466,6 +534,7 @@ export async function incrementPostViews(postId: string): Promise<void> {
     }
   }
 }
+*/
 
 // ============================================================================
 // COMMENTS SYSTEM
