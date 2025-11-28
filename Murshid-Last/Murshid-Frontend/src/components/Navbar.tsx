@@ -1,10 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogIn, User, Bookmark, LayoutDashboard, LogOut } from "lucide-react";
+import { Menu, X, LogIn, User, Bookmark, LayoutDashboard, LogOut, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { useMessaging } from "@/contexts/MessagingContext";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageToggle } from "./LanguageToggle";
 import { toast } from "sonner";
@@ -37,6 +38,7 @@ const Navbar = ({ currentPage, onNavigate }: NavbarProps = {}) => {
   const { user, loading, logout } = useAuth();
   const { t, language } = useI18n();
   const { totalBookmarks, animateBookmark } = useBookmarks();
+  const { totalUnreadCount } = useMessaging();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   
@@ -166,33 +168,60 @@ const Navbar = ({ currentPage, onNavigate }: NavbarProps = {}) => {
             ) : user ? (
               <div className="flex items-center gap-3">
                 {!user.is_admin && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link to="/bookmarks" id="navbar-bookmarks-link" className="relative">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            id="navbar-bookmarks-button"
-                            className={`relative transition-transform duration-300 ${
-                              animateBookmark ? 'animate-pulse scale-110' : ''
-                            }`}
-                          >
-                            <Bookmark className="h-[1.2rem] w-[1.2rem]" />
-                            {totalBookmarks > 0 && (
-                              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                                {totalBookmarks > 99 ? '99+' : totalBookmarks}
-                              </span>
-                            )}
-                            <span className="sr-only">Bookmarks</span>
-                          </Button>
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{language === 'ar' ? 'المحفوظات' : 'Bookmarks'}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link to="/messages" id="navbar-messages-link" className="relative">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              id="navbar-messages-button"
+                              className="relative"
+                            >
+                              <MessageSquare className="h-[1.2rem] w-[1.2rem]" />
+                              {totalUnreadCount > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium animate-pulse">
+                                  {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                                </span>
+                              )}
+                              <span className="sr-only">Messages</span>
+                            </Button>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{language === 'ar' ? 'الرسائل' : 'Messages'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link to="/bookmarks" id="navbar-bookmarks-link" className="relative">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              id="navbar-bookmarks-button"
+                              className={`relative transition-transform duration-300 ${
+                                animateBookmark ? 'animate-pulse scale-110' : ''
+                              }`}
+                            >
+                              <Bookmark className="h-[1.2rem] w-[1.2rem]" />
+                              {totalBookmarks > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                                  {totalBookmarks > 99 ? '99+' : totalBookmarks}
+                                </span>
+                              )}
+                              <span className="sr-only">Bookmarks</span>
+                            </Button>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{language === 'ar' ? 'المحفوظات' : 'Bookmarks'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </>
                 )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -290,25 +319,44 @@ const Navbar = ({ currentPage, onNavigate }: NavbarProps = {}) => {
               ) : user ? (
                 <div className="space-y-3">
                   {!user.is_admin && (
-                    <Link to="/bookmarks" onClick={() => setMobileMenuOpen(false)} id="navbar-mobile-bookmarks-link" className="block">
-                      <Button
-                        variant="outline"
-                        className={`w-full justify-start rounded-xl transition-transform duration-300 ${
-                          animateBookmark ? 'animate-pulse scale-105' : ''
-                        }`}
-                        id="navbar-mobile-bookmarks-button"
-                      >
-                        <div className="relative flex items-center">
-                          <Bookmark className="w-4 h-4 mr-2" />
-                          {language === 'ar' ? 'المحفوظات' : 'Bookmarks'}
-                          {totalBookmarks > 0 && (
-                            <span className="ml-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                              {totalBookmarks > 99 ? '99+' : totalBookmarks}
-                            </span>
-                          )}
-                        </div>
-                      </Button>
-                    </Link>
+                    <>
+                      <Link to="/messages" onClick={() => setMobileMenuOpen(false)} id="navbar-mobile-messages-link" className="block">
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start rounded-xl"
+                          id="navbar-mobile-messages-button"
+                        >
+                          <div className="relative flex items-center">
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            {language === 'ar' ? 'الرسائل' : 'Messages'}
+                            {totalUnreadCount > 0 && (
+                              <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                                {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                              </span>
+                            )}
+                          </div>
+                        </Button>
+                      </Link>
+                      <Link to="/bookmarks" onClick={() => setMobileMenuOpen(false)} id="navbar-mobile-bookmarks-link" className="block">
+                        <Button
+                          variant="outline"
+                          className={`w-full justify-start rounded-xl transition-transform duration-300 ${
+                            animateBookmark ? 'animate-pulse scale-105' : ''
+                          }`}
+                          id="navbar-mobile-bookmarks-button"
+                        >
+                          <div className="relative flex items-center">
+                            <Bookmark className="w-4 h-4 mr-2" />
+                            {language === 'ar' ? 'المحفوظات' : 'Bookmarks'}
+                            {totalBookmarks > 0 && (
+                              <span className="ml-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                                {totalBookmarks > 99 ? '99+' : totalBookmarks}
+                              </span>
+                            )}
+                          </div>
+                        </Button>
+                      </Link>
+                    </>
                   )}
                   <Link to="/profile" onClick={() => setMobileMenuOpen(false)} id="navbar-mobile-profile-link" className="block">
                     <Button

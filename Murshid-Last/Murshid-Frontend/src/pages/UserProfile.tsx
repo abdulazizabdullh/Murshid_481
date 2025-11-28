@@ -6,7 +6,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PageAnimation } from "@/components/animations/PageAnimation";
-import { ArrowLeft, Mail, MapPin, GraduationCap, Building2, User, BookOpen } from 'lucide-react';
+import { ArrowLeft, MapPin, GraduationCap, Building2, User, BookOpen } from 'lucide-react';
+import { StartConversationButton } from '@/components/messaging/StartConversationButton';
 import { useI18n } from '@/contexts/I18nContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -223,7 +224,7 @@ export default function UserProfile() {
                     )}
                   </div>
 
-                  {isOwnProfile && (
+                  {isOwnProfile ? (
                     <div className="mt-6">
                       <Button
                         onClick={() => navigate('/profile')}
@@ -232,18 +233,26 @@ export default function UserProfile() {
                         {language === 'ar' ? 'تعديل الملف الشخصي' : 'Edit Profile'}
                       </Button>
                     </div>
+                  ) : (
+                    <div className="mt-6">
+                      <StartConversationButton 
+                        userId={profile.id}
+                        userName={profile.name}
+                        className="bg-blue-500 hover:bg-blue-600 text-white rounded-2xl"
+                      />
+                    </div>
                   )}
                 </div>
               </div>
             </Card>
 
             {/* Additional Info */}
-            {!isOwnProfile && (
+            {!isOwnProfile && !user && (
               <Card className="p-6">
                 <p className="text-center text-gray-600 dark:text-gray-300" dir={language}>
                   {language === 'ar' 
-                    ? 'هذا الملف الشخصي للعرض فقط' 
-                    : 'This profile is view-only'}
+                    ? 'سجل دخولك لإرسال رسالة' 
+                    : 'Login to send a message'}
                 </p>
               </Card>
             )}
