@@ -168,3 +168,35 @@ export interface ReportWithContent extends Report {
   content_author_id?: string;
   content_author_name?: string;
 }
+
+// ============================================================================
+// CONTENT VERSIONING SYSTEM
+// ============================================================================
+
+export type VersionContentType = 'post' | 'answer';
+
+export interface ContentVersion {
+  id: string;
+  content_type: VersionContentType;
+  content_id: string;
+  version_number: number;
+  previous_data: PostVersionData | AnswerVersionData;
+  diff?: unknown; // jsondiffpatch delta
+  edited_by?: string;
+  editor_name?: string;
+  created_at: string;
+}
+
+// Subset of Post fields that are versioned
+export interface PostVersionData {
+  title: string;
+  content: string;
+  tags: string[];
+  major_tags?: string[];
+  university_tags?: string[];
+}
+
+// Subset of Answer fields that are versioned
+export interface AnswerVersionData {
+  content: string;
+}

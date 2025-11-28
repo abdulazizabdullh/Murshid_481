@@ -13,6 +13,7 @@ import { Label } from './ui/label';
 import { Badge } from './ui/badge';
 import { X } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { updateCommunityPost } from '@/lib/communityApi';
 import { Post } from '@/types/community';
@@ -31,6 +32,7 @@ export default function EditPostModal({
   onPostUpdated,
 }: EditPostModalProps) {
   const { language } = useI18n();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
@@ -89,7 +91,7 @@ export default function EditPostModal({
         title: title.trim(),
         content: content.trim(),
         tags: tags.length > 0 ? tags : undefined,
-      });
+      }, user?.id, user?.name);
 
       toast({
         title: language === 'ar' ? 'نجح' : 'Success',

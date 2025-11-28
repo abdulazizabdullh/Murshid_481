@@ -20,6 +20,8 @@ interface EditAnswerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (updatedAnswer: Answer) => void;
+  editorId?: string;
+  editorName?: string;
 }
 
 export const EditAnswerModal = ({
@@ -27,6 +29,8 @@ export const EditAnswerModal = ({
   isOpen,
   onClose,
   onSuccess,
+  editorId,
+  editorName,
 }: EditAnswerModalProps) => {
   const [content, setContent] = useState(answer.content);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,7 +70,7 @@ export const EditAnswerModal = ({
         content: trimmedContent,
       };
 
-      const updatedAnswer = await updateCommunityAnswer(answer.id, payload);
+      const updatedAnswer = await updateCommunityAnswer(answer.id, payload, editorId, editorName);
 
       toast.success(
         language === "ar"

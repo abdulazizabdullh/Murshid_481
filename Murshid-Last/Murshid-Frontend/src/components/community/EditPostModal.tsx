@@ -25,6 +25,8 @@ interface EditPostModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (updatedPost: Post) => void;
+  editorId?: string;
+  editorName?: string;
 }
 
 export const EditPostModal = ({
@@ -32,6 +34,8 @@ export const EditPostModal = ({
   isOpen,
   onClose,
   onSuccess,
+  editorId,
+  editorName,
 }: EditPostModalProps) => {
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
@@ -203,7 +207,7 @@ export const EditPostModal = ({
         university_tags: universityTags,
       };
 
-      const updatedPost = await updateCommunityPost(post.id, payload);
+      const updatedPost = await updateCommunityPost(post.id, payload, editorId, editorName);
 
       toast.success(
         language === "ar"

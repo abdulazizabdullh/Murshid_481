@@ -26,7 +26,8 @@ import {
   Heart,
   ChevronDown,
   ChevronUp,
-  Ban
+  Ban,
+  History
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,6 +57,8 @@ import { translateTagSync } from '@/lib/tagTranslation';
 import { EditAnswerModal } from '@/components/community/EditAnswerModal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import ReportButton from '@/components/community/ReportButton';
+import { EditHistoryViewer } from '@/components/community/EditHistoryViewer';
+import type { VersionContentType } from '@/types/community';
 
 export default function PostDetail() {
   const { id } = useParams<{ id: string }>();
@@ -71,6 +74,7 @@ export default function PostDetail() {
   const [showAnswerFormInline, setShowAnswerFormInline] = useState(false);
   const [deleteAnswerId, setDeleteAnswerId] = useState<string | null>(null);
   const [timeRefresh, setTimeRefresh] = useState(0);
+  const [historyViewer, setHistoryViewer] = useState<{ type: VersionContentType; id: string; title?: string } | null>(null);
   const answerFormRef = useRef<HTMLDivElement>(null);
   const answerTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -372,6 +376,17 @@ export default function PostDetail() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {/* View History button - show if post was edited */}
+                      {post.updated_at !== post.created_at && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setHistoryViewer({ type: 'post', id: post.id, title: post.title })}
+                          title={language === 'ar' ? 'سجل التعديلات' : 'Edit history'}
+                        >
+                          <History className="w-4 h-4" />
+                        </Button>
+                      )}
                       {isPostAuthor && (
                         <Button
                           variant="ghost"
@@ -625,6 +640,13 @@ export default function PostDetail() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
+                                    {/* View History option - show if answer was edited */}
+                                    {answer.updated_at !== answer.created_at && (
+                                      <DropdownMenuItem onClick={() => setHistoryViewer({ type: 'answer', id: answer.id })}>
+                                        <History className="w-4 h-4 mr-2" />
+                                        {language === 'ar' ? 'سجل التعديلات' : 'View History'}
+                                      </DropdownMenuItem>
+                                    )}
                                     {isAnswerAuthor && (
                                       <DropdownMenuItem onClick={() => setEditingAnswer(answer)}>
                                         <Edit2 className="w-4 h-4 mr-2" />
@@ -651,6 +673,17 @@ export default function PostDetail() {
                                     )}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
+                              )}
+                              {/* View History for non-modifiable answers that were edited */}
+                              {!canModify && answer.updated_at !== answer.created_at && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setHistoryViewer({ type: 'answer', id: answer.id })}
+                                  title={language === 'ar' ? 'سجل التعديلات' : 'Edit history'}
+                                >
+                                  <History className="w-4 h-4" />
+                                </Button>
                               )}
                               {!canModify && !isAnswerAuthor && user && !user.is_admin && (
                                 <ReportButton
@@ -772,6 +805,8 @@ export default function PostDetail() {
             setPost(updatedPost);
             setEditingPost(false);
           }}
+          editorId={user?.id}
+          editorName={user?.name}
         />
       )}
 
@@ -784,6 +819,19 @@ export default function PostDetail() {
             setAnswers(prev => prev.map(a => a.id === updatedAnswer.id ? updatedAnswer : a));
             setEditingAnswer(null);
           }}
+          editorId={user?.id}
+          editorName={user?.name}
+        />
+      )}
+
+      {/* Edit History Viewer */}
+      {historyViewer && (
+        <EditHistoryViewer
+          contentType={historyViewer.type}
+          contentId={historyViewer.id}
+          contentTitle={historyViewer.title}
+          isOpen={!!historyViewer}
+          onClose={() => setHistoryViewer(null)}
         />
       )}
 
