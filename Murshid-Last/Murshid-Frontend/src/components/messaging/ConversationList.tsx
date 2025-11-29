@@ -54,7 +54,8 @@ export function ConversationList({ activeConversationId }: ConversationListProps
         {conversations.map((conversation) => {
           const otherUser = conversation.other_user;
           const isActive = conversation.id === activeConversationId;
-          const hasUnread = (conversation.unread_count || 0) > 0;
+          // Don't show unread badge if this is the active conversation
+          const hasUnread = !isActive && (conversation.unread_count || 0) > 0;
 
           return (
             <button

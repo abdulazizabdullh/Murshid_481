@@ -362,7 +362,7 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
     
     messageUnsubRef.current = subscribeToMessages(
       activeConversationId,
-      (newMessage) => {
+      async (newMessage) => {
         console.log('Received new message via realtime:', newMessage);
         // Only add if not from current user (already added optimistically)
         if (newMessage.sender_id !== user?.id) {
@@ -372,16 +372,19 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
             return [...prev, newMessage];
           });
           
-          // Also update conversation list
+          // Also update conversation list - but don't increment unread since we're viewing it
           setConversations(prev =>
             prev.map(c =>
               c.id === activeConversationId
-                ? { ...c, last_message: newMessage, updated_at: newMessage.created_at }
+                ? { ...c, last_message: newMessage, updated_at: newMessage.created_at, unread_count: 0 }
                 : c
             ).sort((a, b) => 
               new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
             )
           );
+          
+          // Mark as read immediately since user is viewing this conversation
+          await markConversationAsRead(activeConversationId);
         }
       }
     );

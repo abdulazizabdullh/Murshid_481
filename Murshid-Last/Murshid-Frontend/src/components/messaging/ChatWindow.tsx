@@ -2,11 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Loader2, MessageSquare } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useMessaging } from '@/contexts/MessagingContext';
-import { useAuth } from '@/contexts/AuthContext';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
@@ -21,16 +19,17 @@ interface ChatWindowProps {
 export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
   const navigate = useNavigate();
   const { language } = useI18n();
-  const { user } = useAuth();
   const {
     messages,
     loadingMessages,
     fetchMessages,
     sendMessage,
     conversations,
+    markAsRead,
   } = useMessaging();
   
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
 
   // Find the conversation from the list
@@ -47,14 +46,24 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
   }, [conversationId, fetchMessages]);
 
   // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+    // Mark as read when viewing messages (to clear unread badge)
+    if (conversationId && messages.length > 0) {
+      markAsRead(conversationId);
+    }
+  }, [messages, conversationId, markAsRead]);
 
   const handleSend = async (content: string) => {
     await sendMessage(conversationId, content);
+    // Scroll after sending
+    setTimeout(scrollToBottom, 100);
   };
 
   const handleBack = () => {
@@ -127,7 +136,7 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
       </div>
 
       {/* Messages Area */}
-      <ScrollArea ref={scrollRef} className="flex-1 p-4">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4">
         {loadingMessages ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -171,7 +180,10 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
         
         {/* Typing Indicator */}
         <TypingIndicator conversationId={conversationId} />
-      </ScrollArea>
+        
+        {/* Scroll anchor */}
+        <div ref={messagesEndRef} />
+      </div>
 
       {/* Message Input */}
       <MessageInput
