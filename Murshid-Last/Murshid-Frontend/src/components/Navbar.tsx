@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogIn, User, Bookmark, LayoutDashboard, LogOut, MessageSquare } from "lucide-react";
+import { Menu, X, LogIn, User, Bookmark, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
@@ -10,22 +10,6 @@ import { ThemeToggle } from "./ThemeToggle";
 import { LanguageToggle } from "./LanguageToggle";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface NavbarProps {
   currentPage?: string;
@@ -35,12 +19,11 @@ interface NavbarProps {
 const Navbar = ({ currentPage, onNavigate }: NavbarProps = {}) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuth();
   const { t, language } = useI18n();
   const { totalBookmarks, animateBookmark } = useBookmarks();
   const { totalUnreadCount } = useMessaging();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   
   const getCurrentPage = () => {
     if (currentPage) return currentPage;
@@ -223,34 +206,16 @@ const Navbar = ({ currentPage, onNavigate }: NavbarProps = {}) => {
                     </TooltipProvider>
                   </>
                 )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="rounded-xl"
-                      id="navbar-profile-button"
-                    >
-                      <User className="w-4 h-4 mr-2" />
-                      {t('navbar.profile')}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" id="navbar-profile-link" className="cursor-pointer">
-                        <User className="w-4 h-4 mr-2" />
-                        {language === 'ar' ? 'عرض الملف الشخصي' : 'Show Profile'}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setShowLogoutDialog(true)}
-                      className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
-                      id="navbar-logout-menu-item"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      {t('navbar.logout')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Link to="/profile" id="navbar-profile-link">
+                  <Button
+                    variant="ghost"
+                    className="rounded-xl"
+                    id="navbar-profile-button"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    {t('navbar.profile')}
+                  </Button>
+                </Link>
               </div>
             ) : (
               <div className="flex items-center gap-3">
@@ -392,36 +357,6 @@ const Navbar = ({ currentPage, onNavigate }: NavbarProps = {}) => {
           </div>
         </div>
       )}
-
-      {/* Logout Confirmation Dialog */}
-      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-        <AlertDialogContent className="bg-white dark:bg-gray-900" dir={language}>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-gray-900 dark:text-gray-100">
-              {t('navbar.logout.confirmTitle')}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
-              {t('navbar.logout.confirmDescription')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel id="navbar-logout-cancel-button" className="rounded-xl">
-              {t('navbar.logout.cancel')}
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={async () => {
-                await logout();
-                navigate('/', { replace: true });
-                setShowLogoutDialog(false);
-              }}
-              id="navbar-logout-confirm-button"
-              className="rounded-xl bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
-            >
-              {t('navbar.logout')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
     </nav>
   );
