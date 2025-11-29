@@ -1,0 +1,10 @@
+{
+  "buildCommand": "cd Murshid-Frontend && npm install && npm run build",
+  "outputDirectory": "Murshid-Frontend/dist",
+  "framework": null,
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/[^.]+", "dest": "/index.html", "status": 200 }
+  ]
+}
+
