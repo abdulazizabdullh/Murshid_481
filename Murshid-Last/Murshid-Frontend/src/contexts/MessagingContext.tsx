@@ -70,6 +70,9 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
   // Refs for subscriptions
   const messageUnsubRef = useRef<(() => void) | null>(null);
   const conversationUnsubRef = useRef<(() => void) | null>(null);
+  
+  // Track active conversation for real-time messages
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
   // Initialize Yjs for presence/awareness
   useEffect(() => {
@@ -79,16 +82,16 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
     const ydoc = new Y.Doc();
     ydocRef.current = ydoc;
 
-    // Connect to WebSocket provider
+    // Connect to WebSocket provider - ALL users join the SAME room for shared awareness
     const provider = new WebsocketProvider(
       YJS_WEBSOCKET_URL,
-      `murshid-messaging-${user.id}`,
+      'murshid-messaging-global-room',
       ydoc
     );
     providerRef.current = provider;
 
     // Set up IndexedDB persistence for offline support
-    const persistence = new IndexeddbPersistence(`murshid-messaging-${user.id}`, ydoc);
+    const persistence = new IndexeddbPersistence('murshid-messaging-local', ydoc);
     persistenceRef.current = persistence;
 
     // Set up awareness
@@ -176,6 +179,9 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
   // Fetch messages for a conversation
   const fetchMessages = useCallback(async (conversationId: string) => {
     if (!user) return;
+    
+    // Set active conversation for real-time subscription
+    setActiveConversationId(conversationId);
     
     setLoadingMessages(true);
     try {
@@ -309,14 +315,17 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
 
   // Subscribe to messages when viewing a conversation
   useEffect(() => {
-    if (!currentConversation) {
+    if (!activeConversationId) {
       messageUnsubRef.current?.();
       return;
     }
 
+    console.log('Subscribing to messages for conversation:', activeConversationId);
+    
     messageUnsubRef.current = subscribeToMessages(
-      currentConversation.id,
+      activeConversationId,
       (newMessage) => {
+        console.log('Received new message via realtime:', newMessage);
         // Only add if not from current user (already added optimistically)
         if (newMessage.sender_id !== user?.id) {
           setMessages(prev => {
@@ -324,6 +333,17 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
             if (prev.find(m => m.id === newMessage.id)) return prev;
             return [...prev, newMessage];
           });
+          
+          // Also update conversation list
+          setConversations(prev =>
+            prev.map(c =>
+              c.id === activeConversationId
+                ? { ...c, last_message: newMessage, updated_at: newMessage.created_at }
+                : c
+            ).sort((a, b) => 
+              new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+            )
+          );
         }
       }
     );
@@ -331,7 +351,7 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
     return () => {
       messageUnsubRef.current?.();
     };
-  }, [currentConversation, user?.id]);
+  }, [activeConversationId, user?.id]);
 
   const value: MessagingContextType = {
     conversations,

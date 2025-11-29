@@ -399,6 +399,8 @@ export function subscribeToMessages(
   conversationId: string,
   onMessage: (message: Message) => void
 ) {
+  console.log('Setting up realtime subscription for conversation:', conversationId);
+  
   const channel = supabase
     .channel(`messages:${conversationId}`)
     .on(
@@ -410,6 +412,7 @@ export function subscribeToMessages(
         filter: `conversation_id=eq.${conversationId}`,
       },
       async (payload) => {
+        console.log('Realtime payload received:', payload);
         const newMessage = payload.new as Message;
         
         // Get sender profile
@@ -425,7 +428,9 @@ export function subscribeToMessages(
         });
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log('Realtime subscription status:', status);
+    });
 
   return () => {
     supabase.removeChannel(channel);
