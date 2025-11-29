@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { saveContentVersion } from "./versioningApi";
 import type {
   Post,
   Answer,
@@ -14,7 +15,9 @@ import type {
   UpdateReportRequest,
   ReportWithContent,
   ReportStatus,
-  ReportContentType
+  ReportContentType,
+  PostVersionData,
+  AnswerVersionData
 } from "@/types/community";
 
 type CommunityAuthor = {
@@ -693,7 +696,63 @@ export async function getCommentsByAuthor(authorId: string): Promise<Comment[]> 
 // EDIT / UPDATE SYSTEM
 // ============================================================================
 
-export async function updateCommunityPost(postId: string, payload: UpdatePostRequest): Promise<Post> {
+export async function updateCommunityPost(
+  postId: string,
+  payload: UpdatePostRequest,
+  editorId?: string,
+  editorName?: string
+): Promise<Post> {
+  // First, fetch the current post to save version history
+  const { data: currentPost, error: fetchError } = await supabase
+    .from("community_posts")
+    .select("title, content, tags, major_tags, university_tags")
+    .eq("id", postId)
+    .single();
+
+  if (fetchError) {
+    console.error("Error fetching current post for versioning:", fetchError);
+    // Continue with update even if we can't save version
+  }
+
+  // Save version history if we have the current data and editor info
+  if (currentPost && editorId) {
+    const previousData: PostVersionData = {
+      title: currentPost.title,
+      content: currentPost.content,
+      tags: currentPost.tags ?? [],
+      major_tags: currentPost.major_tags ?? [],
+      university_tags: currentPost.university_tags ?? [],
+    };
+
+    const newData: PostVersionData = {
+      title: payload.title,
+      content: payload.content,
+      tags: payload.tags ?? [],
+      major_tags: payload.major_tags ?? [],
+      university_tags: payload.university_tags ?? [],
+    };
+
+    // Check if there are actual changes
+    const hasChanges =
+      previousData.title !== newData.title ||
+      previousData.content !== newData.content ||
+      JSON.stringify(previousData.tags) !== JSON.stringify(newData.tags) ||
+      JSON.stringify(previousData.major_tags) !== JSON.stringify(newData.major_tags) ||
+      JSON.stringify(previousData.university_tags) !== JSON.stringify(newData.university_tags);
+
+    if (hasChanges) {
+      await saveContentVersion(
+        "post",
+        postId,
+        previousData,
+        newData,
+        editorId,
+        editorName ?? "Unknown"
+      );
+    }
+  }
+
+  // Now perform the update
   const { data, error } = await supabase
     .from("community_posts")
     .update({
@@ -715,7 +774,48 @@ export async function updateCommunityPost(postId: string, payload: UpdatePostReq
   return mapPost(data);
 }
 
-export async function updateCommunityAnswer(answerId: string, payload: UpdateAnswerRequest): Promise<Answer> {
+export async function updateCommunityAnswer(
+  answerId: string,
+  payload: UpdateAnswerRequest,
+  editorId?: string,
+  editorName?: string
+): Promise<Answer> {
+  // First, fetch the current answer to save version history
+  const { data: currentAnswer, error: fetchError } = await supabase
+    .from("community_answers")
+    .select("content")
+    .eq("id", answerId)
+    .single();
+
+  if (fetchError) {
+    console.error("Error fetching current answer for versioning:", fetchError);
+    // Continue with update even if we can't save version
+  }
+
+  // Save version history if we have the current data and editor info
+  if (currentAnswer && editorId) {
+    const previousData: AnswerVersionData = {
+      content: currentAnswer.content,
+    };
+
+    const newData: AnswerVersionData = {
+      content: payload.content,
+    };
+
+    // Check if there are actual changes
+    if (previousData.content !== newData.content) {
+      await saveContentVersion(
+        "answer",
+        answerId,
+        previousData,
+        newData,
+        editorId,
+        editorName ?? "Unknown"
+      );
+    }
+  }
+
+  // Now perform the update
   const { data, error } = await supabase
     .from("community_answers")
     .update({ content: payload.content })

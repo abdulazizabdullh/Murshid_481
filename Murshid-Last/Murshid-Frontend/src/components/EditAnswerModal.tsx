@@ -10,6 +10,7 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { useI18n } from '@/contexts/I18nContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { updateCommunityAnswer } from '@/lib/communityApi';
 import { Answer } from '@/types/community';
@@ -28,6 +29,7 @@ export default function EditAnswerModal({
   onAnswerUpdated,
 }: EditAnswerModalProps) {
   const { language } = useI18n();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [content, setContent] = useState(answer.content);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,7 +52,7 @@ export default function EditAnswerModal({
     try {
       await updateCommunityAnswer(answer.id, {
         content: content.trim(),
-      });
+      }, user?.id, user?.name);
 
       toast({
         title: language === 'ar' ? 'نجح' : 'Success',
