@@ -12,6 +12,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { useEffect } from "react";
 import { initializeCache } from "@/lib/tagTranslation";
 import ScrollToTop from "./components/ScrollToTop";
+import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -147,6 +148,7 @@ const App = () => {
           <AuthProvider>
             <MessagingProvider>
               <AppContent />
+              <PWAInstallPrompt />
             </MessagingProvider>
           </AuthProvider>
         </BrowserRouter>
