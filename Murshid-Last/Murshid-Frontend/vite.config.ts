@@ -13,6 +13,14 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   
+  // Preview server configuration for SPA routing
+  preview: {
+    port: 8080,
+  },
+  
+  // Enable SPA fallback
+  appType: 'spa',
+  
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   
   resolve: {
