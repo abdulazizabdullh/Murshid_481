@@ -7,9 +7,7 @@ import {
   ReactNode,
   useRef,
 } from 'react';
-import * as Y from 'yjs';
-import { WebsocketProvider } from 'y-websocket';
-import { IndexeddbPersistence } from 'y-indexeddb';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
 import {
   getConversations,
@@ -28,9 +26,7 @@ import type {
   MessagingContextType,
   ConversationWithDetails,
 } from '@/types/messaging';
-
-// Public Yjs WebSocket server (for production, use your own server)
-const YJS_WEBSOCKET_URL = 'murshid-481.vercel.app';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const MessagingContext = createContext<MessagingContextType | undefined>(undefined);
 
@@ -46,6 +42,17 @@ interface MessagingProviderProps {
   children: ReactNode;
 }
 
+// Presence state type
+interface PresenceState {
+  user_id: string;
+  user_name: string;
+  avatar_url?: string;
+  is_online: boolean;
+  is_typing: boolean;
+  typing_in_conversation?: string | null;
+  online_at: string;
+}
+
 export const MessagingProvider = ({ children }: MessagingProviderProps) => {
   const { user } = useAuth();
   
@@ -57,75 +64,60 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [totalUnreadCount, setTotalUnreadCount] = useState(0);
   
-  // Yjs awareness state
+  // Presence state
   const [typingUsers, setTypingUsers] = useState<{ [conversationId: string]: UserInfo[] }>({});
   const [onlineUsers, setOnlineUsers] = useState<{ [userId: string]: boolean }>({});
-  
-  // Refs for Yjs
-  const ydocRef = useRef<Y.Doc | null>(null);
-  const providerRef = useRef<WebsocketProvider | null>(null);
-  const persistenceRef = useRef<IndexeddbPersistence | null>(null);
-  const awarenessCleanupRef = useRef<(() => void) | null>(null);
   
   // Refs for subscriptions
   const messageUnsubRef = useRef<(() => void) | null>(null);
   const conversationUnsubRef = useRef<(() => void) | null>(null);
+  const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   
   // Track active conversation for real-time messages
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
-  // Initialize Yjs for presence/awareness
+  // Initialize Supabase Presence for online status and typing indicators
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // Clean up presence when user logs out
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current);
+        presenceChannelRef.current = null;
+      }
+      setOnlineUsers({});
+      setTypingUsers({});
+      return;
+    }
 
-    // Create Yjs document for global awareness
-    const ydoc = new Y.Doc();
-    ydocRef.current = ydoc;
-
-    // Connect to WebSocket provider - ALL users join the SAME room for shared awareness
-    const provider = new WebsocketProvider(
-      YJS_WEBSOCKET_URL,
-      'murshid-messaging-global-room',
-      ydoc
-    );
-    providerRef.current = provider;
-
-    // Set up IndexedDB persistence for offline support
-    const persistence = new IndexeddbPersistence('murshid-messaging-local', ydoc);
-    persistenceRef.current = persistence;
-
-    // Set up awareness
-    const awareness = provider.awareness;
-    
-    // Set local state
-    awareness.setLocalState({
-      id: user.id,
-      name: user.name,
-      avatar_url: user.avatar_url,
-      isOnline: true,
-      isTyping: false,
-      lastSeen: new Date().toISOString(),
-      conversationId: null,
+    // Create a presence channel for all online users
+    const channel = supabase.channel('online-users', {
+      config: {
+        presence: {
+          key: user.id,
+        },
+      },
     });
 
-    // Listen for awareness changes
-    const handleAwarenessChange = () => {
-      const states = awareness.getStates();
+    // Handle presence sync (initial state and updates)
+    channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState<PresenceState>();
       const online: { [userId: string]: boolean } = {};
       const typing: { [conversationId: string]: UserInfo[] } = {};
 
-      states.forEach((state) => {
-        if (state && state.id) {
-          online[state.id] = state.isOnline || false;
-          
-          if (state.isTyping && state.conversationId) {
-            if (!typing[state.conversationId]) {
-              typing[state.conversationId] = [];
+      Object.entries(state).forEach(([userId, presences]) => {
+        if (presences && presences.length > 0) {
+          const presence = presences[0];
+          online[userId] = presence.is_online;
+
+          // Track typing users per conversation
+          if (presence.is_typing && presence.typing_in_conversation) {
+            if (!typing[presence.typing_in_conversation]) {
+              typing[presence.typing_in_conversation] = [];
             }
-            typing[state.conversationId].push({
-              id: state.id,
-              name: state.name,
-              avatar_url: state.avatar_url,
+            typing[presence.typing_in_conversation].push({
+              id: userId,
+              name: presence.user_name,
+              avatar_url: presence.avatar_url,
             });
           }
         }
@@ -133,27 +125,63 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
 
       setOnlineUsers(online);
       setTypingUsers(typing);
-    };
+    });
 
-    awareness.on('change', handleAwarenessChange);
-    awarenessCleanupRef.current = () => {
-      awareness.off('change', handleAwarenessChange);
-    };
+    // Handle user joining
+    channel.on('presence', { event: 'join' }, ({ key, newPresences }) => {
+      console.log('User joined:', key, newPresences);
+      if (newPresences && newPresences.length > 0) {
+        setOnlineUsers(prev => ({ ...prev, [key]: true }));
+      }
+    });
 
-    // Update last seen on window focus/blur
-    const handleVisibilityChange = () => {
-      awareness.setLocalStateField('isOnline', !document.hidden);
-      awareness.setLocalStateField('lastSeen', new Date().toISOString());
+    // Handle user leaving
+    channel.on('presence', { event: 'leave' }, ({ key }) => {
+      console.log('User left:', key);
+      setOnlineUsers(prev => ({ ...prev, [key]: false }));
+    });
+
+    // Subscribe and track presence
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('Presence channel subscribed');
+        await channel.track({
+          user_id: user.id,
+          user_name: user.name || 'User',
+          avatar_url: user.avatar_url,
+          is_online: true,
+          is_typing: false,
+          typing_in_conversation: null,
+          online_at: new Date().toISOString(),
+        } as PresenceState);
+      }
+    });
+
+    presenceChannelRef.current = channel;
+
+    // Update presence on visibility change
+    const handleVisibilityChange = async () => {
+      if (presenceChannelRef.current) {
+        await presenceChannelRef.current.track({
+          user_id: user.id,
+          user_name: user.name || 'User',
+          avatar_url: user.avatar_url,
+          is_online: !document.hidden,
+          is_typing: false,
+          typing_in_conversation: null,
+          online_at: new Date().toISOString(),
+        } as PresenceState);
+      }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      awarenessCleanupRef.current?.();
-      provider.disconnect();
-      persistence.destroy();
-      ydoc.destroy();
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current);
+        presenceChannelRef.current = null;
+      }
     };
   }, [user]);
 
@@ -282,14 +310,24 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
     }
   }, []);
 
-  // Set typing status
-  const setTyping = useCallback((conversationId: string, isTyping: boolean) => {
-    if (!providerRef.current) return;
+  // Set typing status using Supabase Presence
+  const setTyping = useCallback(async (conversationId: string, isTyping: boolean) => {
+    if (!presenceChannelRef.current || !user) return;
     
-    const awareness = providerRef.current.awareness;
-    awareness.setLocalStateField('isTyping', isTyping);
-    awareness.setLocalStateField('conversationId', isTyping ? conversationId : null);
-  }, []);
+    try {
+      await presenceChannelRef.current.track({
+        user_id: user.id,
+        user_name: user.name || 'User',
+        avatar_url: user.avatar_url,
+        is_online: true,
+        is_typing: isTyping,
+        typing_in_conversation: isTyping ? conversationId : null,
+        online_at: new Date().toISOString(),
+      } as PresenceState);
+    } catch (error) {
+      console.error('Error updating typing status:', error);
+    }
+  }, [user]);
 
   // Subscribe to real-time updates when user logs in
   useEffect(() => {
@@ -376,4 +414,3 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
     </MessagingContext.Provider>
   );
 };
-
