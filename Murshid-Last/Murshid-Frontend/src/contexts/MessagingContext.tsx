@@ -30,7 +30,7 @@ import type {
 } from '@/types/messaging';
 
 // Public Yjs WebSocket server (for production, use your own server)
-const YJS_WEBSOCKET_URL = 'wss://demos.yjs.dev/ws';
+const YJS_WEBSOCKET_URL = 'murshid-481.vercel.app';
 
 const MessagingContext = createContext<MessagingContextType | undefined>(undefined);
 
