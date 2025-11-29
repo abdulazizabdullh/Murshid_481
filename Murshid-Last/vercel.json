@@ -1,7 +1,0 @@
-{
-  "buildCommand": "cd Murshid-Frontend && npm install && npm run build",
-  "outputDirectory": "Murshid-Frontend/dist",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
