@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
     sendMessage,
     conversations,
     markAsRead,
+    typingUsers,
   } = useMessaging();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -36,6 +37,7 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
   const isInitialLoadRef = useRef(true);
   const previousConversationIdRef = useRef<string | null>(null);
   const previousMessageCountRef = useRef(0);
+  const hasScrolledInitiallyRef = useRef(false);
 
   // Find the conversation from the list
   useEffect(() => {
@@ -49,6 +51,7 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
       isInitialLoadRef.current = true;
       previousConversationIdRef.current = conversationId;
       previousMessageCountRef.current = 0;
+      hasScrolledInitiallyRef.current = false;
     }
   }, [conversationId]);
 
@@ -59,39 +62,50 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
     }
   }, [conversationId]); // Remove fetchMessages from deps to avoid refetch loops
 
-  // Scroll to bottom - instant on initial load, smooth for new messages
+  // Scroll to bottom function
   const scrollToBottom = useCallback((instant = false) => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior: instant ? 'instant' : 'smooth' 
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: instant ? 'instant' : 'smooth'
       });
     }
   }, []);
 
-  // Handle scrolling and mark as read when messages change
-  useEffect(() => {
-    if (messages.length === 0) return;
-    
-    // Check if this is initial load or new messages
-    if (isInitialLoadRef.current) {
-      // Initial load: use instant scroll
-      // Use setTimeout to ensure DOM is ready
-      setTimeout(() => {
+  // Instant scroll to bottom when messages first load - use useLayoutEffect for immediate DOM updates
+  useLayoutEffect(() => {
+    if (!loadingMessages && messages.length > 0 && !hasScrolledInitiallyRef.current) {
+      // Use requestAnimationFrame to ensure DOM is painted
+      requestAnimationFrame(() => {
         scrollToBottom(true);
-      }, 50);
-      isInitialLoadRef.current = false;
-    } else if (messages.length > previousMessageCountRef.current) {
+        hasScrolledInitiallyRef.current = true;
+        isInitialLoadRef.current = false;
+        previousMessageCountRef.current = messages.length;
+      });
+    }
+  }, [loadingMessages, messages.length, scrollToBottom]);
+
+  // Handle scrolling for new messages (after initial load)
+  useEffect(() => {
+    if (hasScrolledInitiallyRef.current && messages.length > previousMessageCountRef.current) {
       // New message arrived: use smooth scroll
       scrollToBottom(false);
     }
-    
     previousMessageCountRef.current = messages.length;
     
     // Mark as read when viewing messages
-    if (conversationId) {
+    if (conversationId && messages.length > 0) {
       markAsRead(conversationId);
     }
   }, [messages, conversationId, markAsRead, scrollToBottom]);
+
+  // Auto-scroll when typing indicator appears
+  const currentTypingUsers = typingUsers[conversationId] || [];
+  useEffect(() => {
+    if (currentTypingUsers.length > 0 && hasScrolledInitiallyRef.current) {
+      scrollToBottom(false);
+    }
+  }, [currentTypingUsers.length, scrollToBottom]);
 
   const handleSend = async (content: string) => {
     await sendMessage(conversationId, content);

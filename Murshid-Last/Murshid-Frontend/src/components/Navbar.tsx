@@ -25,6 +25,9 @@ const Navbar = ({ currentPage, onNavigate }: NavbarProps = {}) => {
   const { totalUnreadCount } = useMessaging();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
+  // Check if user is currently on the messages page
+  const isOnMessagesPage = location.pathname === '/messages' || location.pathname.startsWith('/messages/');
+
   const getCurrentPage = () => {
     if (currentPage) return currentPage;
 
@@ -163,7 +166,7 @@ const Navbar = ({ currentPage, onNavigate }: NavbarProps = {}) => {
                               className="relative"
                             >
                               <MessageSquare className="h-[1.2rem] w-[1.2rem]" />
-                              {totalUnreadCount > 0 && (
+                              {totalUnreadCount > 0 && !isOnMessagesPage && (
                                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium animate-pulse">
                                   {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
                                 </span>
@@ -294,7 +297,7 @@ const Navbar = ({ currentPage, onNavigate }: NavbarProps = {}) => {
                           <div className="relative flex items-center">
                             <MessageSquare className="w-4 h-4 mr-2" />
                             {language === 'ar' ? 'الرسائل' : 'Messages'}
-                            {totalUnreadCount > 0 && (
+                            {totalUnreadCount > 0 && !isOnMessagesPage && (
                               <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
                                 {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
                               </span>
