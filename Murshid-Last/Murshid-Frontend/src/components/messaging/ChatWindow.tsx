@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, MessageSquare } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useMessaging } from '@/contexts/MessagingContext';
+import { useAuth } from '@/contexts/AuthContext';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
-import TypingIndicator from './TypingIndicator';
 import OnlineStatus from './OnlineStatus';
 import type { Conversation } from '@/types/messaging';
 
@@ -19,6 +19,7 @@ interface ChatWindowProps {
 export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
   const navigate = useNavigate();
   const { language } = useI18n();
+  const { user } = useAuth();
   const {
     messages,
     loadingMessages,
@@ -34,10 +35,13 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
   const [conversation, setConversation] = useState<Conversation | null>(null);
   
   // Track if this is the initial load for this conversation
-  const isInitialLoadRef = useRef(true);
   const previousConversationIdRef = useRef<string | null>(null);
   const previousMessageCountRef = useRef(0);
   const hasScrolledInitiallyRef = useRef(false);
+
+  // Get typing users for this conversation (exclude current user)
+  const allTypingUsers = typingUsers[conversationId] || [];
+  const currentTypingUsers = allTypingUsers.filter(u => u.id !== user?.id);
 
   // Find the conversation from the list
   useEffect(() => {
@@ -45,10 +49,9 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
     setConversation(conv || null);
   }, [conversationId, conversations]);
 
-  // Reset initial load flag when conversation changes
+  // Reset flags when conversation changes
   useEffect(() => {
     if (previousConversationIdRef.current !== conversationId) {
-      isInitialLoadRef.current = true;
       previousConversationIdRef.current = conversationId;
       previousMessageCountRef.current = 0;
       hasScrolledInitiallyRef.current = false;
@@ -62,26 +65,29 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
     }
   }, [conversationId]); // Remove fetchMessages from deps to avoid refetch loops
 
-  // Scroll to bottom function
+  // Scroll to bottom function - direct DOM manipulation for reliability
   const scrollToBottom = useCallback((instant = false) => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
-        top: scrollContainerRef.current.scrollHeight,
-        behavior: instant ? 'instant' : 'smooth'
-      });
+      if (instant) {
+        scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+      } else {
+        scrollContainerRef.current.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
     }
   }, []);
 
-  // Instant scroll to bottom when messages first load - use useLayoutEffect for immediate DOM updates
-  useLayoutEffect(() => {
+  // Scroll to bottom when messages load (initial load)
+  useEffect(() => {
     if (!loadingMessages && messages.length > 0 && !hasScrolledInitiallyRef.current) {
-      // Use requestAnimationFrame to ensure DOM is painted
-      requestAnimationFrame(() => {
+      // Use setTimeout to ensure DOM is fully rendered
+      setTimeout(() => {
         scrollToBottom(true);
         hasScrolledInitiallyRef.current = true;
-        isInitialLoadRef.current = false;
         previousMessageCountRef.current = messages.length;
-      });
+      }, 0);
     }
   }, [loadingMessages, messages.length, scrollToBottom]);
 
@@ -98,14 +104,6 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
       markAsRead(conversationId);
     }
   }, [messages, conversationId, markAsRead, scrollToBottom]);
-
-  // Auto-scroll when typing indicator appears
-  const currentTypingUsers = typingUsers[conversationId] || [];
-  useEffect(() => {
-    if (currentTypingUsers.length > 0 && hasScrolledInitiallyRef.current) {
-      scrollToBottom(false);
-    }
-  }, [currentTypingUsers.length, scrollToBottom]);
 
   const handleSend = async (content: string) => {
     await sendMessage(conversationId, content);
@@ -164,7 +162,18 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
               <h2 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
                 {otherUser.name}
               </h2>
-              <OnlineStatus userId={otherUser.id} showText size="sm" />
+              {currentTypingUsers.length > 0 ? (
+                <div className="flex items-center gap-1 text-xs text-blue-500 dark:text-blue-400">
+                  <span>{language === 'ar' ? 'يكتب' : 'typing'}</span>
+                  <span className="flex gap-0.5">
+                    <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </span>
+                </div>
+              ) : (
+                <OnlineStatus userId={otherUser.id} showText size="sm" />
+              )}
             </div>
             <Button
               variant="ghost"
@@ -224,9 +233,6 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
             ))}
           </div>
         )}
-        
-        {/* Typing Indicator */}
-        <TypingIndicator conversationId={conversationId} />
         
         {/* Scroll anchor */}
         <div ref={messagesEndRef} />

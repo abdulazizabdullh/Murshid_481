@@ -221,23 +221,26 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
     }
     
     try {
+      // Fetch messages first - this is the critical path
       const data = await getMessages(conversationId);
       setMessages(data);
       loadedConversationRef.current = conversationId;
       
-      // Mark as read
-      await markConversationAsRead(conversationId);
-      
-      // Update conversation's unread count locally
+      // Update conversation's unread count locally immediately
       setConversations(prev => 
         prev.map(c => 
           c.id === conversationId ? { ...c, unread_count: 0 } : c
         )
       );
       
-      // Recalculate total unread
-      const unread = await getTotalUnreadCount();
-      setTotalUnreadCount(unread);
+      // Run secondary operations in parallel without blocking UI
+      Promise.all([
+        markConversationAsRead(conversationId),
+        getTotalUnreadCount()
+      ]).then(([_, unread]) => {
+        setTotalUnreadCount(unread);
+      }).catch(err => console.error('Error in secondary operations:', err));
+      
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
