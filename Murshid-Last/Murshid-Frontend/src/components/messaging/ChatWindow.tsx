@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,11 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
+  
+  // Track if this is the initial load for this conversation
+  const isInitialLoadRef = useRef(true);
+  const previousConversationIdRef = useRef<string | null>(null);
+  const previousMessageCountRef = useRef(0);
 
   // Find the conversation from the list
   useEffect(() => {
@@ -38,27 +43,55 @@ export function ChatWindow({ conversationId, onBack }: ChatWindowProps) {
     setConversation(conv || null);
   }, [conversationId, conversations]);
 
+  // Reset initial load flag when conversation changes
+  useEffect(() => {
+    if (previousConversationIdRef.current !== conversationId) {
+      isInitialLoadRef.current = true;
+      previousConversationIdRef.current = conversationId;
+      previousMessageCountRef.current = 0;
+    }
+  }, [conversationId]);
+
   // Fetch messages when conversation changes
   useEffect(() => {
     if (conversationId) {
       fetchMessages(conversationId);
     }
-  }, [conversationId, fetchMessages]);
+  }, [conversationId]); // Remove fetchMessages from deps to avoid refetch loops
 
-  // Auto-scroll to bottom when new messages arrive
-  const scrollToBottom = () => {
+  // Scroll to bottom - instant on initial load, smooth for new messages
+  const scrollToBottom = useCallback((instant = false) => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: instant ? 'instant' : 'smooth' 
+      });
     }
-  };
+  }, []);
 
+  // Handle scrolling and mark as read when messages change
   useEffect(() => {
-    scrollToBottom();
-    // Mark as read when viewing messages (to clear unread badge)
-    if (conversationId && messages.length > 0) {
+    if (messages.length === 0) return;
+    
+    // Check if this is initial load or new messages
+    if (isInitialLoadRef.current) {
+      // Initial load: use instant scroll
+      // Use setTimeout to ensure DOM is ready
+      setTimeout(() => {
+        scrollToBottom(true);
+      }, 50);
+      isInitialLoadRef.current = false;
+    } else if (messages.length > previousMessageCountRef.current) {
+      // New message arrived: use smooth scroll
+      scrollToBottom(false);
+    }
+    
+    previousMessageCountRef.current = messages.length;
+    
+    // Mark as read when viewing messages
+    if (conversationId) {
       markAsRead(conversationId);
     }
-  }, [messages, conversationId, markAsRead]);
+  }, [messages, conversationId, markAsRead, scrollToBottom]);
 
   const handleSend = async (content: string) => {
     await sendMessage(conversationId, content);

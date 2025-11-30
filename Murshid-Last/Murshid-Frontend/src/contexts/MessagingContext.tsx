@@ -204,17 +204,26 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
     }
   }, [user]);
 
+  // Track which conversation we've already loaded messages for
+  const loadedConversationRef = useRef<string | null>(null);
+
   // Fetch messages for a conversation
-  const fetchMessages = useCallback(async (conversationId: string) => {
+  const fetchMessages = useCallback(async (conversationId: string, showLoading = true) => {
     if (!user) return;
     
     // Set active conversation for real-time subscription
     setActiveConversationId(conversationId);
     
-    setLoadingMessages(true);
+    // Only show loading spinner on initial load of this conversation
+    const isInitialLoad = loadedConversationRef.current !== conversationId;
+    if (showLoading && isInitialLoad) {
+      setLoadingMessages(true);
+    }
+    
     try {
       const data = await getMessages(conversationId);
       setMessages(data);
+      loadedConversationRef.current = conversationId;
       
       // Mark as read
       await markConversationAsRead(conversationId);
@@ -232,7 +241,9 @@ export const MessagingProvider = ({ children }: MessagingProviderProps) => {
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
-      setLoadingMessages(false);
+      if (showLoading && isInitialLoad) {
+        setLoadingMessages(false);
+      }
     }
   }, [user]);
 
