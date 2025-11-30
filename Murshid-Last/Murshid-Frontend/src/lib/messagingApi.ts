@@ -110,70 +110,83 @@ export async function getConversations(): Promise<Conversation[]> {
 
 /**
  * Get or create a conversation between the current user and another user
+ * Optimized to minimize database queries
  */
 export async function getOrCreateConversation(otherUserId: string): Promise<Conversation> {
-  console.log('getOrCreateConversation called with otherUserId:', otherUserId);
-  
   const { data: { user } } = await supabase.auth.getUser();
-  console.log('Current user:', user?.id);
-  
   if (!user) throw new Error('Not authenticated');
 
   if (user.id === otherUserId) {
     throw new Error('Cannot start a conversation with yourself');
   }
 
-  // Check if a conversation already exists between these two users
-  const { data: myConversations, error: myConvError } = await supabase
+  // Get the other user's profile first (we'll need it either way)
+  const { data: otherProfile } = await supabase
+    .from('profiles')
+    .select('id, name, avatar_url, role, is_admin')
+    .eq('id', otherUserId)
+    .single();
+
+  if (!otherProfile) {
+    throw new Error('User not found');
+  }
+
+  // Find existing direct conversation between these two users using a single efficient query
+  // Get conversations where current user is a participant
+  const { data: myParticipations } = await supabase
     .from('conversation_participants')
     .select('conversation_id')
     .eq('user_id', user.id);
 
-  console.log('My conversations:', myConversations, 'Error:', myConvError);
+  if (myParticipations && myParticipations.length > 0) {
+    const conversationIds = myParticipations.map(c => c.conversation_id);
 
-  if (myConversations && myConversations.length > 0) {
-    const conversationIds = myConversations.map(c => c.conversation_id);
-
-    // Check if other user is in any of these conversations
-    const { data: existingParticipation, error: existingError } = await supabase
+    // Check if other user is in any of these conversations (with exactly 2 participants)
+    const { data: sharedConversations } = await supabase
       .from('conversation_participants')
       .select('conversation_id')
       .eq('user_id', otherUserId)
       .in('conversation_id', conversationIds);
 
-    console.log('Existing participation:', existingParticipation, 'Error:', existingError);
-
-    if (existingParticipation && existingParticipation.length > 0) {
-      // Get the existing conversation with 2 participants only (direct message)
-      for (const participation of existingParticipation) {
+    if (sharedConversations && sharedConversations.length > 0) {
+      // Find the first conversation with exactly 2 participants (direct message)
+      for (const conv of sharedConversations) {
         const { count } = await supabase
           .from('conversation_participants')
           .select('*', { count: 'exact', head: true })
-          .eq('conversation_id', participation.conversation_id);
+          .eq('conversation_id', conv.conversation_id);
 
         if (count === 2) {
-          // This is a direct message conversation
-          const conversations = await getConversations();
-          const existing = conversations.find(c => c.id === participation.conversation_id);
-          if (existing) return existing;
+          // Found existing DM - get just the conversation details we need
+          const { data: existingConv } = await supabase
+            .from('conversations')
+            .select('id, created_at, updated_at')
+            .eq('id', conv.conversation_id)
+            .single();
+
+          if (existingConv) {
+            return {
+              ...existingConv,
+              participants: [],
+              other_user: otherProfile as UserInfo,
+              unread_count: 0,
+            };
+          }
         }
       }
     }
   }
 
-  // Create new conversation
-  console.log('Creating new conversation...');
+  // No existing conversation found - create new one
   const { data: newConversation, error: convError } = await supabase
     .from('conversations')
     .insert({})
     .select()
     .single();
 
-  console.log('New conversation result:', newConversation, 'Error:', convError);
   if (convError) throw convError;
 
   // Add both participants
-  console.log('Adding participants:', { conversationId: newConversation.id, userId: user.id, otherUserId });
   const { error: partError } = await supabase
     .from('conversation_participants')
     .insert([
@@ -181,15 +194,7 @@ export async function getOrCreateConversation(otherUserId: string): Promise<Conv
       { conversation_id: newConversation.id, user_id: otherUserId },
     ]);
 
-  console.log('Participants insert error:', partError);
   if (partError) throw partError;
-
-  // Get the other user's profile
-  const { data: otherProfile } = await supabase
-    .from('profiles')
-    .select('id, name, avatar_url, role, is_admin')
-    .eq('id', otherUserId)
-    .single();
 
   return {
     ...newConversation,
